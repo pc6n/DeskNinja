@@ -29,6 +29,32 @@ pnpm dev
 
 On first launch: start Ollama, pick a model (e.g. **Llama 3.2 1B · Fastest**), download, chat.
 
+## Download (macOS)
+
+Download the latest `.dmg` from [GitHub Releases](https://github.com/pc6n/DeskNinja/releases), or build locally (same as [Stash](https://github.com/pc6n/stash)):
+
+```bash
+pnpm install
+pnpm --filter './packages/*' build
+pnpm --filter @deskninja/desktop build
+```
+
+Output: `apps/desktop/src-tauri/target/release/bundle/dmg/`
+
+Upload to GitHub Releases:
+
+```bash
+gh release upload v0.1.0 apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg --clobber
+```
+
+### macOS Gatekeeper (unsigned builds)
+
+Right-click → **Open** once, or:
+
+```bash
+xattr -cr /Applications/DeskNinja.app
+```
+
 ## Commands
 
 | Command | Description |
