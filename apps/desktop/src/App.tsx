@@ -6,19 +6,24 @@ import {
   LOCAL_MODEL_CATALOG,
   OLLAMA_PROVIDER_ID,
 } from "@deskninja/model-providers";
+import { AppTabs, type AppTab } from "./components/AppTabs";
 import { ChatPanel } from "./components/ChatPanel";
 import { LocalSetupPanel } from "./components/LocalSetupPanel";
+import { TodoPanel } from "./components/TodoPanel";
 import { useChatSession } from "./hooks/useChatSession";
 import { useLocalSetupWithClient } from "./hooks/useLocalSetup";
+import { useTodos } from "./hooks/useTodos";
 import { openOllamaDownloadPage } from "./lib/openExternal";
 import { createDesktopProviderRegistry } from "./lib/providerRegistry";
 
 export function App() {
   const registry = useMemo(() => createDesktopProviderRegistry(), []);
   const localSetup = useLocalSetupWithClient();
+  const todos = useTodos();
   const defaultProviderId = OLLAMA_PROVIDER_ID;
   const [service] = useState(() => new ConversationService(registry, defaultProviderId));
   const [providerId, setProviderId] = useState(defaultProviderId);
+  const [activeTab, setActiveTab] = useState<AppTab>("chat");
 
   const chat = useChatSession({
     service,
@@ -40,8 +45,13 @@ export function App() {
         <div>
           <p className="eyebrow">DeskNinja</p>
           <h1>Desktop Assistant</h1>
+          <AppTabs
+            activeTab={activeTab}
+            openTodoCount={todos.openCount}
+            onChange={setActiveTab}
+          />
         </div>
-        {isReady ? (
+        {isReady && activeTab === "chat" ? (
           <div className="header-controls">
             <label className="provider-select">
               <span>Provider</span>
@@ -77,7 +87,17 @@ export function App() {
         ) : null}
       </header>
 
-      {!isReady ? (
+      {activeTab === "todos" ? (
+        <TodoPanel
+          todos={todos.todos}
+          loading={todos.loading}
+          error={todos.error}
+          onAdd={todos.addTodo}
+          onToggle={todos.toggleTodoItem}
+          onEdit={todos.editTodo}
+          onRemove={todos.removeTodo}
+        />
+      ) : !isReady ? (
         <LocalSetupPanel
           state={localSetup.state}
           onRefresh={localSetup.refresh}

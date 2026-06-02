@@ -1,0 +1,10 @@
+[[permission]]
+identifier = "allow-todo-commands"
+description = "Allows DeskNinja to manage local todos."
+commands.allow = [
+  "get_todos",
+  "add_todo",
+  "toggle_todo",
+  "update_todo",
+  "remove_todo"
+]

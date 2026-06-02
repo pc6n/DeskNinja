@@ -42,6 +42,27 @@ body {
   font-size: 1.5rem;
 }
 
+.app-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.app-tabs button {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #2a3140;
+  background: #171b24;
+  color: #b8c0cc;
+  cursor: pointer;
+}
+
+.app-tabs button.active {
+  border-color: #4f7cff;
+  background: #1b2433;
+  color: #f5f7fb;
+}
+
 .header-controls {
   display: flex;
   flex-wrap: wrap;
@@ -314,4 +335,122 @@ body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.todo-panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 1rem;
+  min-height: 0;
+  border: 1px solid #242b38;
+  border-radius: 1rem;
+  background: #121722;
+  padding: 1rem;
+}
+
+.todo-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.todo-panel-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.todo-summary,
+.shortcut-hint {
+  margin: 0.35rem 0 0;
+  color: #8b95a7;
+  font-size: 0.85rem;
+}
+
+.todo-composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+}
+
+.todo-composer input,
+.todo-edit-form input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #2a3140;
+  background: #0f1115;
+  color: inherit;
+}
+
+.todo-composer button,
+.todo-edit-form button {
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 0.65rem;
+  background: #4f7cff;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.todo-edit-form button.secondary {
+  background: #2a3140;
+}
+
+.todo-error {
+  margin: 0;
+  color: #ff8f8f;
+}
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.todo-empty {
+  color: #8b95a7;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid #2a3140;
+  background: #171d29;
+}
+
+.todo-item-done .todo-text {
+  color: #8b95a7;
+  text-decoration: line-through;
+}
+
+.todo-text {
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.todo-delete {
+  border: none;
+  background: transparent;
+  color: #ff8f8f;
+  cursor: pointer;
+}
+
+.todo-edit-form {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.5rem;
+  grid-column: 2 / -1;
 }

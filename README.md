@@ -2,12 +2,14 @@
 
 Desktop AI assistant for macOS — chat with local models (Ollama) from a clean Tauri + React app.
 
-## Features (v0.1.0)
+## Features (v0.2.0)
 
 - **Local Ollama integration** — download and run models on-device
 - **First-run setup** — Ollama service detection, model download with progress
 - **Streaming chat UI** — thinking/typing indicators and response timing
 - **Model catalog** — fast defaults (`llama3.2:1b`) through balanced/quality options
+- **Todo tab** — add, complete, edit, and delete todos (persisted locally)
+- **Global shortcut** — `⌘⇧Space` brings DeskNinja to the foreground
 - **Clean monorepo** — provider-agnostic core, swappable adapters
 
 ## Requirements
@@ -44,7 +46,7 @@ Output: `apps/desktop/src-tauri/target/release/bundle/dmg/`
 Upload to GitHub Releases:
 
 ```bash
-gh release upload v0.1.0 apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg --clobber
+gh release upload v0.2.0 apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg --clobber
 ```
 
 ### macOS Gatekeeper (unsigned builds)
@@ -89,4 +91,4 @@ MIT — see [LICENSE](LICENSE).
 
 ## Roadmap
 
-See [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — global shortcut, cloud providers (OpenAI), Keychain, quick panel.
+See [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) — cloud providers (OpenAI), Keychain, quick panel.
