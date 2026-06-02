@@ -1,0 +1,11 @@
+[[permission]]
+identifier = "allow-ollama-commands"
+description = "Allows DeskNinja to talk to the local Ollama service."
+commands.allow = [
+  "check_ollama",
+  "ensure_ollama_running",
+  "list_ollama_models",
+  "pull_ollama_model",
+  "stream_ollama_chat",
+  "open_ollama_app"
+]

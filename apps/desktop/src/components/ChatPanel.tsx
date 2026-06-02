@@ -1,0 +1,115 @@
+import { useEffect, useRef, useState } from "react";
+import type { ChatMessage } from "@deskninja/ai-core";
+import type { MessageMetrics, StreamPhase } from "../lib/chatMetrics";
+import { formatAssistantContent, getLatestAssistantMessage } from "../lib/chatMetrics";
+import {
+  getStreamUiState,
+  MessageMetricsFooter,
+  ThinkingIndicator,
+  TypingCursor,
+} from "./ChatStatus";
+
+interface ChatPanelProps {
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  streamPhase: StreamPhase;
+  metricsByMessageId: Record<string, MessageMetrics>;
+  streamingExcludeIds: Set<string>;
+  modelLabel?: string;
+  onSend: (content: string) => Promise<void>;
+}
+
+export function ChatPanel({
+  messages,
+  isStreaming,
+  streamPhase,
+  metricsByMessageId,
+  streamingExcludeIds,
+  modelLabel,
+  onSend,
+}: ChatPanelProps) {
+  const [draft, setDraft] = useState("");
+  const listRef = useRef<HTMLDivElement>(null);
+  const latestAssistant = getLatestAssistantMessage(
+    messages,
+    isStreaming ? streamingExcludeIds : new Set(),
+  );
+  const { showThinking, showTypingCursor } = getStreamUiState(
+    isStreaming,
+    streamPhase,
+    latestAssistant?.content,
+  );
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, isStreaming, streamPhase]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    const content = draft.trim();
+    if (!content || isStreaming) {
+      return;
+    }
+    setDraft("");
+    await onSend(content);
+  }
+
+  return (
+    <section className="chat-panel" aria-label="Chat">
+      <div className="message-list" ref={listRef} role="log" aria-live="polite">
+        {messages.length === 0 ? (
+          <p className="empty-state">
+            {modelLabel
+              ? `Local model ${modelLabel} is ready. Ask anything.`
+              : "Ask anything to get started."}
+          </p>
+        ) : (
+          messages
+            .filter(
+              (message) =>
+                !(message.role === "assistant" && message.content.length === 0 && showThinking),
+            )
+            .map((message, index, visibleMessages) => {
+            const isLatestAssistant =
+              message.role === "assistant" &&
+              index === visibleMessages.length - 1 &&
+              !showThinking;
+            const showCursor = isLatestAssistant && showTypingCursor;
+
+            return (
+              <article key={message.id} className={`message message-${message.role}`}>
+                <header>{message.role}</header>
+                <p>
+                  {message.role === "assistant"
+                    ? formatAssistantContent(message.content)
+                    : message.content}
+                  {showCursor ? <TypingCursor visible /> : null}
+                </p>
+                {message.role === "assistant" ? (
+                  <MessageMetricsFooter metrics={metricsByMessageId[message.id]} />
+                ) : null}
+              </article>
+            );
+          })
+        )}
+        <ThinkingIndicator visible={showThinking} />
+      </div>
+      <form className="composer" onSubmit={handleSubmit}>
+        <label className="sr-only" htmlFor="chat-input">
+          Message
+        </label>
+        <textarea
+          id="chat-input"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="Type a message..."
+          rows={3}
+          disabled={isStreaming}
+        />
+        <button type="submit" disabled={isStreaming || draft.trim().length === 0}>
+          {isStreaming ? (streamPhase === "thinking" ? "Thinking..." : "Typing...") : "Send"}
+        </button>
+      </form>
+    </section>
+  );
+}

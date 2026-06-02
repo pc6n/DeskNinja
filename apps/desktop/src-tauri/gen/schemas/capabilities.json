@@ -1,0 +1,1 @@
+{"com.deskninja.app":{"identifier":"com.deskninja.app","description":"","local":true,"windows":["main","quick-panel"],"permissions":["core:default","shell:allow-open","allow-ollama-commands"]}}

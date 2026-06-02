@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.deskninja.app",
+  "windows": ["main", "quick-panel"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open",
+    "allow-ollama-commands"
+  ]
+}
