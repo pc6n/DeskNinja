@@ -10,6 +10,10 @@ pub struct TodoItem {
     pub text: String,
     pub done: bool,
     pub created_at: u64,
+    #[serde(default)]
+    pub sort_order: u32,
+    #[serde(default)]
+    pub due_at: Option<u64>,
 }
 
 pub struct TodoStore {
@@ -20,11 +24,16 @@ pub struct TodoStore {
 impl TodoStore {
     pub fn new(data_dir: PathBuf) -> Self {
         let path = data_dir.join("todos.json");
-        let todos = fs::read_to_string(&path)
+        let mut todos: Vec<TodoItem> = fs::read_to_string(&path)
             .ok()
             .and_then(|raw| serde_json::from_str(&raw).ok())
             .unwrap_or_default();
-        Self { todos, path }
+        let migrated = migrate_legacy(&mut todos);
+        let store = Self { todos, path };
+        if migrated {
+            store.persist();
+        }
+        store
     }
 
     pub fn list(&self) -> &[TodoItem] {
@@ -32,11 +41,20 @@ impl TodoStore {
     }
 
     pub fn add(&mut self, text: String) -> TodoItem {
+        let sort_order = self
+            .todos
+            .iter()
+            .map(|todo| todo.sort_order)
+            .max()
+            .unwrap_or(0)
+            .saturating_add(1);
         let item = TodoItem {
             id: format!("todo-{}", new_id()),
             text,
             done: false,
             created_at: now_ms(),
+            sort_order,
+            due_at: None,
         };
         self.todos.push(item.clone());
         self.persist();
@@ -63,6 +81,27 @@ impl TodoStore {
         Some(updated)
     }
 
+    pub fn set_due(&mut self, id: &str, due_at: Option<u64>) -> Option<TodoItem> {
+        let item = self.todos.iter_mut().find(|todo| todo.id == id)?;
+        item.due_at = due_at;
+        let updated = item.clone();
+        self.persist();
+        Some(updated)
+    }
+
+    pub fn reorder(&mut self, ordered_ids: &[String]) -> Result<Vec<TodoItem>, String> {
+        for (index, id) in ordered_ids.iter().enumerate() {
+            let item = self
+                .todos
+                .iter_mut()
+                .find(|todo| todo.id == *id && !todo.done)
+                .ok_or_else(|| format!("open todo not found: {id}"))?;
+            item.sort_order = index as u32;
+        }
+        self.persist();
+        Ok(self.todos.clone())
+    }
+
     pub fn remove(&mut self, id: &str) -> bool {
         let before = self.todos.len();
         self.todos.retain(|todo| todo.id != id);
@@ -81,6 +120,20 @@ impl TodoStore {
             let _ = fs::write(&self.path, raw);
         }
     }
+}
+
+fn migrate_legacy(todos: &mut [TodoItem]) -> bool {
+    if todos.len() <= 1 {
+        return false;
+    }
+    let all_zero = todos.iter().all(|todo| todo.sort_order == 0);
+    if !all_zero {
+        return false;
+    }
+    for (index, todo) in todos.iter_mut().enumerate() {
+        todo.sort_order = index as u32;
+    }
+    true
 }
 
 fn now_ms() -> u64 {

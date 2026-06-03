@@ -7,7 +7,10 @@ use commands::ollama::{
     check_ollama, ensure_ollama_running, list_ollama_models, open_ollama_app, pull_ollama_model,
     stream_ollama_chat,
 };
-use commands::todos::{add_todo, get_todos, remove_todo, toggle_todo, update_todo, TodoState};
+use commands::todos::{
+    add_todo, get_todos, remove_todo, reorder_todos, set_todo_due, toggle_todo, update_todo,
+    TodoState,
+};
 use parking_lot::Mutex;
 use shortcuts::register_shortcuts;
 use std::sync::Arc;
@@ -48,6 +51,8 @@ pub fn run() {
             add_todo,
             toggle_todo,
             update_todo,
+            set_todo_due,
+            reorder_todos,
             remove_todo
         ])
         .setup(|app| {

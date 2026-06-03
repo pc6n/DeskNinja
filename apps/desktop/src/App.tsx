@@ -90,11 +90,15 @@ export function App() {
       {activeTab === "todos" ? (
         <TodoPanel
           todos={todos.todos}
+          sortMode={todos.sortMode}
           loading={todos.loading}
           error={todos.error}
+          onSortModeChange={todos.changeSortMode}
           onAdd={todos.addTodo}
           onToggle={todos.toggleTodoItem}
           onEdit={todos.editTodo}
+          onDueChange={todos.updateDue}
+          onReorder={todos.reorderOpen}
           onRemove={todos.removeTodo}
         />
       ) : !isReady ? (

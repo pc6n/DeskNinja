@@ -6,5 +6,7 @@ commands.allow = [
   "add_todo",
   "toggle_todo",
   "update_todo",
+  "set_todo_due",
+  "reorder_todos",
   "remove_todo"
 ]

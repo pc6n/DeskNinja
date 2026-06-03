@@ -44,6 +44,27 @@ pub fn update_todo(
 }
 
 #[tauri::command]
+pub fn set_todo_due(
+    state: State<'_, TodoState>,
+    id: String,
+    due_at: Option<u64>,
+) -> Result<TodoItem, String> {
+    state
+        .store
+        .lock()
+        .set_due(&id, due_at)
+        .ok_or_else(|| "todo not found".into())
+}
+
+#[tauri::command]
+pub fn reorder_todos(
+    state: State<'_, TodoState>,
+    ordered_ids: Vec<String>,
+) -> Result<Vec<TodoItem>, String> {
+    state.store.lock().reorder(&ordered_ids)
+}
+
+#[tauri::command]
 pub fn remove_todo(state: State<'_, TodoState>, id: String) -> Result<Vec<TodoItem>, String> {
     if !state.store.lock().remove(&id) {
         return Err("todo not found".into());
