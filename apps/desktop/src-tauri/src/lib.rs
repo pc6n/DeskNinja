@@ -17,7 +17,7 @@ use std::sync::Arc;
 use store::TodoStore;
 use tauri::Manager;
 use tauri_plugin_global_shortcut::ShortcutState;
-use window::focus_main_window;
+use window::toggle_main_at_cursor;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,7 +32,7 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, _shortcut, event| {
                     if event.state == ShortcutState::Pressed {
-                        let _ = focus_main_window(app);
+                        let _ = toggle_main_at_cursor(app);
                     }
                 })
                 .build(),
