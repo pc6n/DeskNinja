@@ -37,7 +37,7 @@ describe("OllamaClient", () => {
       start(controller) {
         controller.enqueue(
           new TextEncoder().encode(
-            '{"message":{"content":"Hel"}}\n{"message":{"content":"lo"}}\n',
+            '{"message":{"content":"Hel"}}\n{"message":{"content":"lo"}}\n{"done":true,"prompt_eval_count":12,"eval_count":5}\n',
           ),
         );
         controller.close();
@@ -48,12 +48,19 @@ describe("OllamaClient", () => {
       fetchImpl: async () => new Response(body, { status: 200 }),
     });
 
-    const chunks: string[] = [];
-    for await (const delta of client.chatStream("qwen3.5:4b", [{ role: "user", content: "Hi" }])) {
-      chunks.push(delta);
+    const deltas: string[] = [];
+    let usage: { totalTokens: number } | undefined;
+    for await (const event of client.chatStream("qwen3.5:4b", [{ role: "user", content: "Hi" }])) {
+      if (event.type === "delta") {
+        deltas.push(event.content);
+      }
+      if (event.type === "usage") {
+        usage = event.usage;
+      }
     }
 
-    expect(chunks.join("")).toBe("Hello");
+    expect(deltas.join("")).toBe("Hello");
+    expect(usage?.totalTokens).toBe(17);
   });
 });
 

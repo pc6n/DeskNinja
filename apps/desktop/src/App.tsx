@@ -3,6 +3,7 @@ import { ConversationService } from "@deskninja/ai-core";
 import {
   DEFAULT_LOCAL_MODEL,
   formatModelOptionLabel,
+  getModelContextTokens,
   LOCAL_MODEL_CATALOG,
   OLLAMA_PROVIDER_ID,
 } from "@deskninja/model-providers";
@@ -43,6 +44,10 @@ export function App() {
 
   const providers = registry.list();
   const isReady = localSetup.state.phase === "ready";
+  const contextLimit =
+    providerId === OLLAMA_PROVIDER_ID
+      ? getModelContextTokens(localSetup.state.selectedModel)
+      : undefined;
 
   function handleProviderChange(nextProviderId: string): void {
     setProviderId(nextProviderId);
@@ -158,6 +163,8 @@ export function App() {
           streamingExcludeIds={chat.streamingExcludeIds}
           onSend={handleChatSend}
           modelLabel={localSetup.state.selectedModel || DEFAULT_LOCAL_MODEL}
+          contextUsage={chat.contextUsage}
+          contextLimit={contextLimit}
         />
       )}
       </div>

@@ -31,6 +31,16 @@ export interface OllamaChatChunk {
   prompt_eval_count?: number;
 }
 
+export interface ChatStreamUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export type ChatStreamEvent =
+  | { type: "delta"; content: string }
+  | { type: "usage"; usage: ChatStreamUsage };
+
 export interface OllamaPullChunk {
   status: string;
   total?: number;
@@ -45,5 +55,5 @@ export interface OllamaTransport {
   chatStream(
     model: string,
     messages: OllamaChatMessage[],
-  ): AsyncIterable<string>;
+  ): AsyncIterable<ChatStreamEvent>;
 }

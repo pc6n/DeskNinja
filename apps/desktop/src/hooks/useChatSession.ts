@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { ChatMessage } from "@deskninja/ai-core";
+import type { ChatMessage, TokenUsage } from "@deskninja/ai-core";
 import { ConversationService } from "@deskninja/ai-core";
 import { OLLAMA_PROVIDER_ID } from "@deskninja/model-providers";
 import {
@@ -28,6 +28,7 @@ export function useChatSession({ service, providerId, selectedModel }: UseChatSe
   const [streamPhase, setStreamPhase] = useState<StreamPhase>("idle");
   const [metricsByMessageId, setMetricsByMessageId] = useState<Record<string, MessageMetrics>>({});
   const [streamingExcludeIds, setStreamingExcludeIds] = useState<Set<string>>(new Set());
+  const [contextUsage, setContextUsage] = useState<TokenUsage | undefined>();
   const streamTimingRef = useRef<StreamTimingState>({
     startedAt: 0,
     firstTokenAt: 0,
@@ -55,6 +56,9 @@ export function useChatSession({ service, providerId, selectedModel }: UseChatSe
         model: providerId === OLLAMA_PROVIDER_ID ? selectedModel : undefined,
         onUpdate: (state) => {
           setMessages([...state.messages]);
+          if (state.contextUsage) {
+            setContextUsage(state.contextUsage);
+          }
 
           const timing = streamTimingRef.current;
           const activeAssistant = findActiveAssistantMessage(
@@ -102,7 +106,8 @@ export function useChatSession({ service, providerId, selectedModel }: UseChatSe
       metricsByMessageId,
       sendMessage,
       streamingExcludeIds,
+      contextUsage,
     }),
-    [messages, isStreaming, streamPhase, metricsByMessageId, sendMessage, streamingExcludeIds],
+    [messages, isStreaming, streamPhase, metricsByMessageId, sendMessage, streamingExcludeIds, contextUsage],
   );
 }

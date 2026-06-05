@@ -1,4 +1,6 @@
 import type {
+  ChatStreamEvent,
+  ChatStreamUsage,
   OllamaChatChunk,
   OllamaChatMessage,
   OllamaHealth,
@@ -73,7 +75,7 @@ export class OllamaClient implements OllamaTransport {
     }
   }
 
-  async *chatStream(model: string, messages: OllamaChatMessage[]): AsyncGenerator<string> {
+  async *chatStream(model: string, messages: OllamaChatMessage[]): AsyncGenerator<ChatStreamEvent> {
     const response = await this.fetchImpl(`${this.baseUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -88,7 +90,13 @@ export class OllamaClient implements OllamaTransport {
     for await (const chunk of readNdjson<OllamaChatChunk>(response.body)) {
       const delta = chunk.message?.content;
       if (delta) {
-        yield delta;
+        yield { type: "delta", content: delta };
+      }
+      if (chunk.done) {
+        const usage = toChatStreamUsage(chunk);
+        if (usage) {
+          yield { type: "usage", usage };
+        }
       }
     }
   }
@@ -124,6 +132,21 @@ export function matchesModelName(installedName: string, requestedName: string): 
   }
 
   return installedTag === requestedTag || installedTag.startsWith(`${requestedTag}-`);
+}
+
+function toChatStreamUsage(chunk: OllamaChatChunk): ChatStreamUsage | undefined {
+  const promptTokens = chunk.prompt_eval_count;
+  const completionTokens = chunk.eval_count;
+  if (promptTokens === undefined && completionTokens === undefined) {
+    return undefined;
+  }
+  const prompt = promptTokens ?? 0;
+  const completion = completionTokens ?? 0;
+  return {
+    promptTokens: prompt,
+    completionTokens: completion,
+    totalTokens: prompt + completion,
+  };
 }
 
 function mapPullProgress(chunk: OllamaPullChunk): PullProgress {

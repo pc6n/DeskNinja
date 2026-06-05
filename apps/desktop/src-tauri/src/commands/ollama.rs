@@ -53,9 +53,20 @@ struct PullChunk {
     completed: Option<u64>,
 }
 
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatUsagePayload {
+    prompt_tokens: u32,
+    completion_tokens: u32,
+    total_tokens: u32,
+}
+
 #[derive(Deserialize)]
 struct ChatChunk {
     message: Option<ChatMessagePartial>,
+    done: Option<bool>,
+    prompt_eval_count: Option<u32>,
+    eval_count: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -188,6 +199,22 @@ fn emit_chat_delta(app: &AppHandle, line: &str) -> Result<(), String> {
     if let Some(content) = payload.message.and_then(|message| message.content) {
         app.emit("ollama-chat-delta", content)
             .map_err(|error| error.to_string())?;
+    }
+
+    if payload.done == Some(true) {
+        let prompt = payload.prompt_eval_count.unwrap_or(0);
+        let completion = payload.eval_count.unwrap_or(0);
+        if prompt > 0 || completion > 0 {
+            app.emit(
+                "ollama-chat-usage",
+                ChatUsagePayload {
+                    prompt_tokens: prompt,
+                    completion_tokens: completion,
+                    total_tokens: prompt + completion,
+                },
+            )
+            .map_err(|error| error.to_string())?;
+        }
     }
 
     Ok(())

@@ -7,8 +7,12 @@ describe("OllamaAdapter", () => {
   it("maps stream events from Ollama chat API", async () => {
     const mockClient = {
       chatStream: async function* () {
-        yield "Mock ";
-        yield "reply";
+        yield { type: "delta", content: "Mock " };
+        yield { type: "delta", content: "reply" };
+        yield {
+          type: "usage",
+          usage: { promptTokens: 8, completionTokens: 4, totalTokens: 12 },
+        };
       },
     } as unknown as OllamaClient;
 
@@ -24,6 +28,7 @@ describe("OllamaAdapter", () => {
     expect(events.at(-1)).toMatchObject({
       type: "done",
       message: { content: "Mock reply" },
+      usage: { totalTokens: 12 },
     });
   });
 });

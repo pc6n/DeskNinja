@@ -1,12 +1,14 @@
-import type { ChatMessage } from "../types/chat.js";
+import type { ChatMessage, TokenUsage } from "../types/chat.js";
 import type { StreamEvent } from "../types/stream.js";
 import type { ProviderClient } from "../provider/types.js";
+import { FORMATTING_SYSTEM_PROMPT } from "./prompts.js";
 
 export interface ConversationState {
   id: string;
   messages: ChatMessage[];
   activeProviderId: string;
   isStreaming: boolean;
+  contextUsage?: TokenUsage;
 }
 
 export interface SendMessageOptions {
@@ -18,9 +20,6 @@ export interface SendMessageOptions {
 export function createConversationId(): string {
   return crypto.randomUUID();
 }
-
-const FORMATTING_SYSTEM_PROMPT =
-  "Respond in clear Markdown. Use short paragraphs, bullet lists, headings, and fenced code blocks when helpful.";
 
 function withFormattingSystemPrompt(messages: ChatMessage[]): ChatMessage[] {
   if (messages.some((message) => message.role === "system")) {
@@ -107,7 +106,11 @@ export class ConversationService {
     }
 
     if (event.type === "done") {
-      return this.upsertAssistant(event.message.id, event.message.content, event.message);
+      const next = this.upsertAssistant(event.message.id, event.message.content, event.message);
+      return {
+        ...next,
+        contextUsage: event.usage ?? this.state.contextUsage,
+      };
     }
 
     const errorMessage = createMessage("assistant", `Error: ${event.error.message}`);

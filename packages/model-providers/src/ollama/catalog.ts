@@ -4,6 +4,7 @@ export interface LocalModelOption {
   sizeLabel: string;
   description: string;
   speed: "fastest" | "fast" | "balanced" | "quality";
+  contextTokens: number;
 }
 
 export const FASTEST_LOCAL_MODEL = "llama3.2:1b";
@@ -16,6 +17,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     sizeLabel: "~1.3 GB",
     speed: "fastest",
     description: "Fastest option. Best for quick answers and low latency.",
+    contextTokens: 128_000,
   },
   {
     id: "llama3.2:3b",
@@ -23,6 +25,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     sizeLabel: "~2 GB",
     speed: "fast",
     description: "Very fast with slightly better answers than 1B.",
+    contextTokens: 128_000,
   },
   {
     id: "phi3.5:mini",
@@ -30,6 +33,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     sizeLabel: "~2.2 GB",
     speed: "fast",
     description: "Compact and quick, strong at short instructions.",
+    contextTokens: 128_000,
   },
   {
     id: "qwen3.5:4b",
@@ -37,6 +41,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     sizeLabel: "~3.4 GB",
     speed: "balanced",
     description: "Balanced speed and quality for everyday tasks.",
+    contextTokens: 32_768,
   },
   {
     id: "gemma4:e4b",
@@ -44,6 +49,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     sizeLabel: "~9.6 GB",
     speed: "balanced",
     description: "Higher quality, slower downloads and responses.",
+    contextTokens: 8192,
   },
   {
     id: "gemma4:26b",
@@ -51,11 +57,16 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     sizeLabel: "~18 GB",
     speed: "quality",
     description: "Best quality here, but much slower on local hardware.",
+    contextTokens: 8192,
   },
 ];
 
 export function findLocalModel(modelId: string): LocalModelOption | undefined {
   return LOCAL_MODEL_CATALOG.find((model) => model.id === modelId);
+}
+
+export function getModelContextTokens(modelId: string): number | undefined {
+  return findLocalModel(modelId)?.contextTokens;
 }
 
 export function formatModelOptionLabel(model: LocalModelOption): string {

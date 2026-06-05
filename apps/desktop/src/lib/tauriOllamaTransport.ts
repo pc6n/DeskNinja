@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
+  ChatStreamEvent,
+  ChatStreamUsage,
   OllamaChatMessage,
   OllamaHealth,
   OllamaTransport,
@@ -85,12 +87,14 @@ class TauriOllamaTransport implements OllamaTransport {
     }
   }
 
-  async *chatStream(model: string, messages: OllamaChatMessage[]): AsyncGenerator<string> {
+  async *chatStream(model: string, messages: OllamaChatMessage[]): AsyncGenerator<ChatStreamEvent> {
     const queue: string[] = [];
     let resolveWait: (() => void) | null = null;
     let unlisten: UnlistenFn | null = null;
+    let usageUnlisten: UnlistenFn | null = null;
     let invokeError: Error | null = null;
     let finished = false;
+    let usage: ChatStreamUsage | undefined;
 
     const waitForDelta = (): Promise<void> =>
       new Promise((resolve) => {
@@ -100,6 +104,9 @@ class TauriOllamaTransport implements OllamaTransport {
     unlisten = await listen<string>("ollama-chat-delta", (event) => {
       queue.push(event.payload);
       resolveWait?.();
+    });
+    usageUnlisten = await listen<ChatStreamUsage>("ollama-chat-usage", (event) => {
+      usage = event.payload;
     });
 
     const invokeTask = invoke("stream_ollama_chat", { model, messages })
@@ -116,14 +123,19 @@ class TauriOllamaTransport implements OllamaTransport {
         await waitForDelta();
         continue;
       }
-      yield queue.shift() as string;
+      yield { type: "delta", content: queue.shift() as string };
     }
 
     await invokeTask;
     await unlisten?.();
+    await usageUnlisten?.();
 
     if (invokeError) {
       throw invokeError;
+    }
+
+    if (usage) {
+      yield { type: "usage", usage };
     }
   }
 }

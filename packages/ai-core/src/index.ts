@@ -10,6 +10,7 @@ export type {
 } from "./types/tools.js";
 export type { ProviderClient, ProviderConfig, ProviderRegistry } from "./provider/types.js";
 export { InMemoryProviderRegistry } from "./provider/registry.js";
+export { FORMATTING_SYSTEM_PROMPT } from "./conversation/prompts.js";
 export {
   ConversationService,
   createConversationId,

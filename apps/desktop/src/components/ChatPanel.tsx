@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import type { ChatMessage } from "@deskninja/ai-core";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { resolveChatContextUsage } from "../lib/contextUsage";
+import type { ChatMessage, TokenUsage } from "@deskninja/ai-core";
+import { ContextUsageBar } from "./ContextUsageBar";
 import type { MessageMetrics, StreamPhase } from "../lib/chatMetrics";
 import { getLatestAssistantMessage } from "../lib/chatMetrics";
 import { MarkdownContent } from "./MarkdownContent";
@@ -17,6 +19,8 @@ interface ChatPanelProps {
   metricsByMessageId: Record<string, MessageMetrics>;
   streamingExcludeIds: Set<string>;
   modelLabel?: string;
+  contextUsage?: TokenUsage;
+  contextLimit?: number;
   onSend: (content: string) => Promise<void>;
 }
 
@@ -27,6 +31,8 @@ export function ChatPanel({
   metricsByMessageId,
   streamingExcludeIds,
   modelLabel,
+  contextUsage,
+  contextLimit,
   onSend,
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
@@ -39,6 +45,10 @@ export function ChatPanel({
     isStreaming,
     streamPhase,
     latestAssistant?.content,
+  );
+  const resolvedContext = useMemo(
+    () => resolveChatContextUsage(messages, contextUsage),
+    [messages, contextUsage],
   );
 
   useEffect(() => {
@@ -108,6 +118,12 @@ export function ChatPanel({
         )}
         <ThinkingIndicator visible={showThinking} />
       </div>
+      <ContextUsageBar
+        usage={resolvedContext?.usage}
+        contextLimit={contextLimit}
+        approximate={resolvedContext?.approximate}
+        lastReplyTokens={contextUsage?.completionTokens}
+      />
       <form className="composer" onSubmit={handleSubmit}>
         <label className="sr-only" htmlFor="chat-input">
           Message

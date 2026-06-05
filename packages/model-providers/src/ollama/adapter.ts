@@ -5,6 +5,7 @@ import type {
   ProviderConfig,
   ProviderError,
   StreamEvent,
+  TokenUsage,
 } from "@deskninja/ai-core";
 import { createMessage, err, ok } from "@deskninja/ai-core";
 import { OllamaClient } from "./client.js";
@@ -31,8 +32,10 @@ export class OllamaAdapter implements ProviderClient {
     let content = "";
 
     try {
-      for await (const delta of this.client.chatStream(model, toOllamaMessages(request))) {
-        content += delta;
+      for await (const event of this.client.chatStream(model, toOllamaMessages(request))) {
+        if (event.type === "delta") {
+          content += event.content;
+        }
       }
     } catch (error) {
       return err(mapProviderError(error));
@@ -51,14 +54,20 @@ export class OllamaAdapter implements ProviderClient {
 
     try {
       let content = "";
-      for await (const delta of this.client.chatStream(model, toOllamaMessages(request))) {
-        content += delta;
-        yield { type: "delta", messageId, content: delta };
+      let usage: TokenUsage | undefined;
+      for await (const event of this.client.chatStream(model, toOllamaMessages(request))) {
+        if (event.type === "delta") {
+          content += event.content;
+          yield { type: "delta", messageId, content: event.content };
+          continue;
+        }
+        usage = event.usage;
       }
 
       yield {
         type: "done",
         message: { ...createMessage("assistant", content), id: messageId },
+        usage,
       };
     } catch (error) {
       yield { type: "error", error: mapProviderError(error) };

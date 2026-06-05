@@ -330,10 +330,34 @@ body.panel-mode {
   color: inherit;
 }
 
+.context-usage-bar {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.context-usage-label {
+  font-size: 0.72rem;
+  color: #8b95a7;
+}
+
+.context-usage-track {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: #1b2433;
+  overflow: hidden;
+}
+
+.context-usage-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4f8cff, #6ea8ff);
+}
+
 .chat-panel {
   display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 1rem;
+  grid-template-rows: 1fr auto auto;
+  gap: 0.65rem;
   min-height: 0;
   border: 1px solid #242b38;
   border-radius: 1rem;

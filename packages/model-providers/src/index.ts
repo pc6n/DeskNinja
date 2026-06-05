@@ -25,9 +25,16 @@ export {
   LOCAL_MODEL_CATALOG,
   findLocalModel,
   formatModelOptionLabel,
+  getModelContextTokens,
 } from "./ollama/catalog.js";
 export type { LocalModelOption } from "./ollama/catalog.js";
-export type { OllamaHealth, OllamaChatMessage, PullProgress } from "./ollama/types.js";
+export type {
+  ChatStreamEvent,
+  ChatStreamUsage,
+  OllamaHealth,
+  OllamaChatMessage,
+  PullProgress,
+} from "./ollama/types.js";
 export {
   CONTEXT_ACTIONS,
   buildContextMessages,
