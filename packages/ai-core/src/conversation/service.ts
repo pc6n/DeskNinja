@@ -19,6 +19,16 @@ export function createConversationId(): string {
   return crypto.randomUUID();
 }
 
+const FORMATTING_SYSTEM_PROMPT =
+  "Respond in clear Markdown. Use short paragraphs, bullet lists, headings, and fenced code blocks when helpful.";
+
+function withFormattingSystemPrompt(messages: ChatMessage[]): ChatMessage[] {
+  if (messages.some((message) => message.role === "system")) {
+    return messages;
+  }
+  return [createMessage("system", FORMATTING_SYSTEM_PROMPT), ...messages];
+}
+
 export function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
   return {
     id: crypto.randomUUID(),
@@ -63,7 +73,7 @@ export class ConversationService {
     options.onUpdate?.(this.state);
 
     for await (const event of provider.streamMessage({
-      messages: this.state.messages,
+      messages: withFormattingSystemPrompt(this.state.messages),
       model: options.model,
     })) {
       this.state = this.applyStreamEvent(event);

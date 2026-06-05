@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use parking_lot::Mutex;
 use tauri::window::Color;
 use crate::commands::macos::capture_selection_for_menu;
-use tauri::{AppHandle, Emitter, LogicalPosition, Manager, Monitor, WebviewWindow};
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Monitor, WebviewWindow};
 
 pub const PANEL_LABEL: &str = "quick-panel";
 pub const ACTION_MENU_LABEL: &str = "action-menu";
@@ -46,6 +46,11 @@ pub fn configure_popup_window(app: &AppHandle, label: &str) -> Result<(), String
         .set_background_color(Some(Color(0, 0, 0, 0)))
         .map_err(|error| error.to_string())?;
     window.set_shadow(false).map_err(|error| error.to_string())?;
+    if label == PANEL_LABEL {
+        window
+            .set_min_size(Some(LogicalSize::new(360.0, 320.0)))
+            .map_err(|error| error.to_string())?;
+    }
     Ok(())
 }
 

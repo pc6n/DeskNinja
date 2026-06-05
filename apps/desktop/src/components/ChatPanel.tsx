@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@deskninja/ai-core";
 import type { MessageMetrics, StreamPhase } from "../lib/chatMetrics";
-import { formatAssistantContent, getLatestAssistantMessage } from "../lib/chatMetrics";
+import { getLatestAssistantMessage } from "../lib/chatMetrics";
+import { MarkdownContent } from "./MarkdownContent";
 import {
   getStreamUiState,
   MessageMetricsFooter,
@@ -90,12 +91,14 @@ export function ChatPanel({
             return (
               <article key={message.id} className={`message message-${message.role}`}>
                 <header>{message.role}</header>
-                <p>
-                  {message.role === "assistant"
-                    ? formatAssistantContent(message.content)
-                    : message.content}
+                <div className={`message-body${message.role === "user" ? " message-body--plain" : ""}`}>
+                  {message.role === "assistant" ? (
+                    <MarkdownContent content={message.content} />
+                  ) : (
+                    message.content
+                  )}
                   {showCursor ? <TypingCursor visible /> : null}
-                </p>
+                </div>
                 {message.role === "assistant" ? (
                   <MessageMetricsFooter metrics={metricsByMessageId[message.id]} />
                 ) : null}
@@ -114,7 +117,7 @@ export function ChatPanel({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleComposerKeyDown}
-          placeholder="Message… Enter to send, Shift+Enter for newline"
+          placeholder="Message… /todo Buy milk to add a todo, Enter to send"
           rows={2}
           disabled={isStreaming}
         />

@@ -28,6 +28,9 @@
     "core:window:allow-set-background-color",
     "core:window:allow-set-shadow",
     "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-set-size",
+    "core:window:allow-inner-size",
     "core:window:allow-close",
     "core:tray:default",
     "core:event:allow-emit"

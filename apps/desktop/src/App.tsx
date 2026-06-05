@@ -8,19 +8,25 @@ import {
 } from "@deskninja/model-providers";
 import { AppTabs, type AppTab } from "./components/AppTabs";
 import { PanelDragBar } from "./components/PanelDragBar";
+import { PanelResizeHandles } from "./components/PanelResizeHandles";
 import { ChatPanel } from "./components/ChatPanel";
 import { LocalSetupPanel } from "./components/LocalSetupPanel";
 import { TodoPanel } from "./components/TodoPanel";
 import { useChatSession } from "./hooks/useChatSession";
 import { useLocalSetupWithClient } from "./hooks/useLocalSetup";
 import { useTodos } from "./hooks/useTodos";
+import { usePanelResize } from "./hooks/usePanelResize";
 import { usePanelMode } from "./hooks/usePanelMode";
+import { useQuickPanel } from "./hooks/useQuickPanel";
 import { showAboutWindow } from "./lib/appInfo";
+import { parseChatTodoCommands } from "./lib/chatTodos";
 import { openOllamaDownloadPage } from "./lib/openExternal";
 import { createDesktopProviderRegistry } from "./lib/providerRegistry";
 
 export function App() {
   const isPanel = usePanelMode();
+  const isQuickPanel = useQuickPanel();
+  usePanelResize(isQuickPanel);
   const registry = useMemo(() => createDesktopProviderRegistry(), []);
   const localSetup = useLocalSetupWithClient();
   const todos = useTodos();
@@ -43,9 +49,24 @@ export function App() {
     service.setProvider(nextProviderId);
   }
 
+  async function handleChatSend(content: string): Promise<void> {
+    const { todos: todoTexts, chatContent } = parseChatTodoCommands(content);
+
+    if (todoTexts.length > 0) {
+      await Promise.all(todoTexts.map((text) => todos.addTodo(text)));
+      if (!chatContent) {
+        setActiveTab("todos");
+        return;
+      }
+    }
+
+    await chat.sendMessage(chatContent);
+  }
+
   return (
     <main className={`app-shell${isPanel ? " app-shell--panel" : ""}`}>
       <PanelDragBar />
+      <PanelResizeHandles />
       <header className={`app-header${isPanel ? " app-header--panel" : ""}`}>
         <div>
           {!isPanel ? <p className="eyebrow">DeskNinja</p> : null}
@@ -135,7 +156,7 @@ export function App() {
           streamPhase={chat.streamPhase}
           metricsByMessageId={chat.metricsByMessageId}
           streamingExcludeIds={chat.streamingExcludeIds}
-          onSend={chat.sendMessage}
+          onSend={handleChatSend}
           modelLabel={localSetup.state.selectedModel || DEFAULT_LOCAL_MODEL}
         />
       )}

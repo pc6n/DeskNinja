@@ -21,6 +21,7 @@ body.panel-mode {
 }
 
 .app-shell--panel {
+  position: relative;
   min-height: 100vh;
   height: 100vh;
   padding: 0.6rem;
@@ -29,6 +30,57 @@ body.panel-mode {
   border: 1px solid #2a3140;
   background: #121722;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.panel-resize-edge,
+.panel-resize-corner {
+  position: absolute;
+  z-index: 20;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.panel-resize-edge--east {
+  top: 0.75rem;
+  right: 0;
+  width: 0.45rem;
+  height: calc(100% - 1.5rem);
+  cursor: ew-resize;
+}
+
+.panel-resize-edge--south {
+  left: 0.75rem;
+  bottom: 0;
+  width: calc(100% - 1.5rem);
+  height: 0.45rem;
+  cursor: ns-resize;
+}
+
+.panel-resize-corner {
+  right: 0.15rem;
+  bottom: 0.15rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  cursor: nwse-resize;
+  opacity: 0.55;
+}
+
+.panel-resize-corner::before {
+  content: "";
+  position: absolute;
+  right: 0.1rem;
+  bottom: 0.1rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid #6b7a90;
+  border-bottom: 2px solid #6b7a90;
+  border-radius: 0 0 0.1rem 0;
+}
+
+.panel-resize-corner:hover,
+.panel-resize-corner:focus-visible {
+  opacity: 1;
 }
 
 .panel-drag-bar {
@@ -321,6 +373,135 @@ body.panel-mode {
 
 .message-assistant {
   background: #171d29;
+}
+
+.message-body {
+  margin: 0;
+  line-height: 1.55;
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.message-body--plain {
+  white-space: pre-wrap;
+}
+
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.markdown-content > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-paragraph {
+  margin: 0.55rem 0;
+}
+
+.markdown-heading {
+  margin: 0.75rem 0 0.35rem;
+  font-weight: 600;
+  color: #eef2f8;
+}
+
+.markdown-heading--1 {
+  font-size: 1rem;
+}
+
+.markdown-heading--2 {
+  font-size: 0.95rem;
+}
+
+.markdown-heading--3 {
+  font-size: 0.9rem;
+}
+
+.markdown-list {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.markdown-list li {
+  margin: 0.2rem 0;
+}
+
+.markdown-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: #0d1118;
+  border: 1px solid #2a3140;
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.3rem;
+}
+
+.markdown-code {
+  margin: 0.6rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #2a3140;
+  background: #0d1118;
+  overflow: hidden;
+}
+
+.markdown-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+  border-bottom: 1px solid #242b38;
+  background: #11161f;
+}
+
+.markdown-code-lang {
+  font-size: 0.72rem;
+  text-transform: lowercase;
+  color: #8b95a7;
+  letter-spacing: 0.03em;
+}
+
+.markdown-code-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: #9aa6b8;
+  cursor: pointer;
+}
+
+.markdown-code-copy:hover,
+.markdown-code-copy:focus-visible {
+  background: #1b2433;
+  color: #eef2f8;
+  outline: none;
+}
+
+.markdown-code-block {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  overflow-x: auto;
+  border: none;
+  background: transparent;
+}
+
+.markdown-code-block code {
+  display: block;
+  padding: 0;
+  border: none;
+  background: transparent;
+  white-space: pre-wrap;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.markdown-content a {
+  color: #8ec5ff;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
 }
 
 .message-pending {
@@ -1016,7 +1197,6 @@ body.panel-mode {
   min-height: 5rem;
   max-height: 10rem;
   overflow: auto;
-  white-space: pre-wrap;
 }
 
 .context-result-actions,

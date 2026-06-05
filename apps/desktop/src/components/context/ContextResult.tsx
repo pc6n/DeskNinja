@@ -1,3 +1,5 @@
+import { MarkdownContent } from "../MarkdownContent";
+
 interface ContextResultProps {
   result: string;
   isStreaming: boolean;
@@ -24,7 +26,7 @@ export function ContextResult({
       </button>
       {error ? <p className="context-error">{error}</p> : null}
       <div className="context-result-body" aria-live="polite">
-        {result || (isStreaming ? "Thinking…" : "")}
+        {result ? <MarkdownContent content={result} /> : isStreaming ? "Thinking…" : ""}
       </div>
       <div className="context-result-actions">
         <button type="button" disabled={!result || isStreaming} onClick={onCopy}>
