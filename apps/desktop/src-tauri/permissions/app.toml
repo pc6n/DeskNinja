@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-app-commands"
+description = "App metadata and about window."
+commands.allow = ["get_app_info", "show_about"]

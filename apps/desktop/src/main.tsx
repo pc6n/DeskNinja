@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { AboutApp } from "./AboutApp";
 import { App } from "./App";
 import { ContextActionApp } from "./ContextActionApp";
 import "./styles.css";
@@ -14,6 +15,9 @@ function Root() {
   const label = getCurrentWindow().label;
   if (label === "action-menu") {
     return <ContextActionApp />;
+  }
+  if (label === "about") {
+    return <AboutApp />;
   }
   return <App />;
 }

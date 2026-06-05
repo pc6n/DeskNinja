@@ -387,6 +387,12 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "App metadata and about window.",
+          "type": "string",
+          "const": "allow-app-commands",
+          "markdownDescription": "App metadata and about window."
+        },
+        {
           "description": "Allows DeskNinja macOS bridge commands.",
           "type": "string",
           "const": "allow-macos-commands",

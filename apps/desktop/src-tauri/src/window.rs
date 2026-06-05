@@ -9,6 +9,7 @@ use tauri::{AppHandle, Emitter, LogicalPosition, Manager, Monitor, WebviewWindow
 
 pub const PANEL_LABEL: &str = "quick-panel";
 pub const ACTION_MENU_LABEL: &str = "action-menu";
+pub const ABOUT_LABEL: &str = "about";
 const EDGE_PADDING: f64 = 12.0;
 const FOCUS_GUARD_MS: u64 = 400;
 
@@ -86,6 +87,31 @@ pub fn open_action_menu_at_cursor(app: &AppHandle) -> Result<(), String> {
 
 pub fn hide_window(app: &AppHandle, label: &str) -> Result<(), String> {
     get_window(app, label)?.hide().map_err(|error| error.to_string())
+}
+
+pub fn show_about_window(app: &AppHandle) -> Result<(), String> {
+    let window = get_window(app, ABOUT_LABEL)?;
+    center_on_screen(&window)?;
+    window.show().map_err(|error| error.to_string())?;
+    window.set_focus().map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+fn center_on_screen(window: &WebviewWindow) -> Result<(), String> {
+    let monitor = window
+        .current_monitor()
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "no monitor".to_string())?;
+    let scale = monitor.scale_factor();
+    let size = window.outer_size().map_err(|error| error.to_string())?;
+    let (area_x, area_y, area_w, area_h) = work_area_logical(&monitor);
+    let width = size.width as f64 / scale;
+    let height = size.height as f64 / scale;
+    let x = area_x + (area_w - width) / 2.0;
+    let y = area_y + (area_h - height) / 2.0;
+    window
+        .set_position(LogicalPosition::new(x, y))
+        .map_err(|error| error.to_string())
 }
 
 fn toggle_window_at_cursor(app: &AppHandle, label: &str) -> Result<(), String> {

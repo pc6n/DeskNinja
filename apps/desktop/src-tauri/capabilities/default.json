@@ -1,9 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "identifier": "com.deskninja.app",
-  "windows": ["main", "quick-panel", "action-menu"],
+  "windows": ["main", "quick-panel", "action-menu", "about"],
   "permissions": [
     "core:default",
+    "allow-app-commands",
     "shell:allow-open",
     "allow-ollama-commands",
     "allow-todo-commands",
@@ -27,6 +28,8 @@
     "core:window:allow-set-background-color",
     "core:window:allow-set-shadow",
     "core:window:allow-start-dragging",
+    "core:window:allow-close",
+    "core:tray:default",
     "core:event:allow-emit"
   ]
 }

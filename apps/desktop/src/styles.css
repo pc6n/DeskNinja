@@ -60,6 +60,99 @@ body.panel-mode {
   font-size: 0.95rem;
 }
 
+.app-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.about-link {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid #2a3140;
+  border-radius: 0.35rem;
+  background: #171b24;
+  color: #8b95a7;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.about-link:hover {
+  color: #c5cdd8;
+  border-color: #3a4558;
+}
+
+.about-shell {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1.25rem;
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: #121722;
+  color: #f5f7fb;
+}
+
+.about-shell h1 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.about-version {
+  margin: 0;
+  color: #8b95a7;
+  font-size: 0.9rem;
+}
+
+.about-tagline {
+  margin: 0;
+  color: #b8c0cc;
+  font-size: 0.875rem;
+}
+
+.about-meta {
+  margin: 0.25rem 0 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.about-meta div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.about-meta dt {
+  margin: 0;
+  color: #6b7585;
+}
+
+.about-meta dd {
+  margin: 0;
+  color: #d5dbe6;
+}
+
+.about-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.about-actions button {
+  padding: 0.45rem 0.85rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: #4f7cff;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.about-actions button.secondary {
+  background: #2a3140;
+  color: #d5dbe6;
+}
+
 .panel-scroll {
   flex: 1;
   min-height: 0;

@@ -15,6 +15,7 @@ import { useChatSession } from "./hooks/useChatSession";
 import { useLocalSetupWithClient } from "./hooks/useLocalSetup";
 import { useTodos } from "./hooks/useTodos";
 import { usePanelMode } from "./hooks/usePanelMode";
+import { showAboutWindow } from "./lib/appInfo";
 import { openOllamaDownloadPage } from "./lib/openExternal";
 import { createDesktopProviderRegistry } from "./lib/providerRegistry";
 
@@ -48,7 +49,19 @@ export function App() {
       <header className={`app-header${isPanel ? " app-header--panel" : ""}`}>
         <div>
           {!isPanel ? <p className="eyebrow">DeskNinja</p> : null}
-          <h1>{isPanel ? "DeskNinja" : "Desktop Assistant"}</h1>
+          <h1 className="app-title-row">
+            {isPanel ? "DeskNinja" : "Desktop Assistant"}
+            {isPanel ? (
+              <button
+                type="button"
+                className="about-link"
+                title="About DeskNinja"
+                onClick={() => void showAboutWindow()}
+              >
+                About
+              </button>
+            ) : null}
+          </h1>
           <AppTabs
             activeTab={activeTab}
             openTodoCount={todos.openCount}

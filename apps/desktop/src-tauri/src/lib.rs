@@ -3,8 +3,10 @@ mod paste;
 mod settings_store;
 mod shortcuts;
 mod store;
+mod tray;
 mod window;
 
+use commands::app_info::{get_app_info, show_about};
 use commands::macos::{
     check_accessibility, get_app_settings, get_foreground_app, get_selected_text, insert_text,
     request_accessibility_permission, update_app_settings, MacOsState,
@@ -78,7 +80,9 @@ pub fn run() {
             check_accessibility,
             request_accessibility_permission,
             get_app_settings,
-            update_app_settings
+            update_app_settings,
+            get_app_info,
+            show_about
         ])
         .setup(move |app| {
             if let Some(main) = app.get_webview_window("main") {
@@ -91,14 +95,22 @@ pub fn run() {
                 configure_popup_window(app.handle(), label)?;
             }
             register_shortcuts(app.handle())?;
+            if let Some(about) = app.get_webview_window(window::ABOUT_LABEL) {
+                let _ = about.hide();
+            }
+            tray::setup_tray(app)?;
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("error building DeskNinja")
         .run(|app, event| {
             match event {
-                RunEvent::ExitRequested { api, .. } => {
-                    api.prevent_exit();
+                RunEvent::ExitRequested { api, code, .. } => {
+                    // Keep running in the menu bar when the user dismisses windows (code None).
+                    // Allow tray Quit / app.exit() which passes code Some(...).
+                    if code.is_none() {
+                        api.prevent_exit();
+                    }
                 }
                 RunEvent::Reopen { .. } => {
                     let _ = toggle_panel_at_cursor(app);
