@@ -1,0 +1,12 @@
+[[permission]]
+identifier = "allow-macos-commands"
+description = "Allows DeskNinja macOS bridge commands."
+commands.allow = [
+  "get_foreground_app",
+  "get_selected_text",
+  "insert_text",
+  "check_accessibility",
+  "request_accessibility_permission",
+  "get_app_settings",
+  "update_app_settings"
+]

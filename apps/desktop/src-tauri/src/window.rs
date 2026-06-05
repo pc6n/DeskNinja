@@ -1,35 +1,123 @@
-use tauri::{AppHandle, LogicalPosition, Manager, Monitor, WebviewWindow};
+use serde::Serialize;
+use std::collections::HashMap;
+use std::sync::LazyLock;
+use std::time::{SystemTime, UNIX_EPOCH};
+use parking_lot::Mutex;
+use tauri::window::Color;
+use crate::commands::macos::capture_selection_for_menu;
+use tauri::{AppHandle, Emitter, LogicalPosition, Manager, Monitor, WebviewWindow};
 
-const MAIN_LABEL: &str = "main";
+pub const PANEL_LABEL: &str = "quick-panel";
+pub const ACTION_MENU_LABEL: &str = "action-menu";
 const EDGE_PADDING: f64 = 12.0;
+const FOCUS_GUARD_MS: u64 = 400;
 
-pub fn toggle_main_at_cursor(app: &AppHandle) -> Result<(), String> {
-    let window = get_main(app)?;
+static LAST_SHOWN_MS: LazyLock<Mutex<HashMap<String, u64>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+fn mark_window_shown(label: &str) {
+    LAST_SHOWN_MS
+        .lock()
+        .insert(label.to_string(), now_ms());
+}
+
+pub fn should_ignore_focus_lost(label: &str) -> bool {
+    let last = LAST_SHOWN_MS.lock().get(label).copied().unwrap_or(0);
+    now_ms().saturating_sub(last) < FOCUS_GUARD_MS
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ActionMenuOpenPayload {
+    pub selected_text: Option<String>,
+}
+
+pub fn configure_popup_window(app: &AppHandle, label: &str) -> Result<(), String> {
+    let window = get_window(app, label)?;
+    window
+        .set_background_color(Some(Color(0, 0, 0, 0)))
+        .map_err(|error| error.to_string())?;
+    window.set_shadow(false).map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+pub fn toggle_panel_at_cursor(app: &AppHandle) -> Result<(), String> {
+    toggle_window_at_cursor(app, PANEL_LABEL)
+}
+
+/// ⌘J: hide if open; else context menu when text is selected, otherwise panel.
+pub fn toggle_deskninja_at_cursor(app: &AppHandle) -> Result<(), String> {
+    if window_visible(app, ACTION_MENU_LABEL)? {
+        return hide_window(app, ACTION_MENU_LABEL);
+    }
+    if window_visible(app, PANEL_LABEL)? {
+        return hide_window(app, PANEL_LABEL);
+    }
+    let has_selection = capture_selection_for_menu(app)
+        .ok()
+        .flatten()
+        .is_some_and(|text| !text.trim().is_empty());
+    if has_selection {
+        return open_action_menu_at_cursor(app);
+    }
+    show_window_at_cursor(app, PANEL_LABEL)
+}
+
+fn window_visible(app: &AppHandle, label: &str) -> Result<bool, String> {
+    Ok(get_window(app, label)?.is_visible().unwrap_or(false))
+}
+
+pub fn open_action_menu_at_cursor(app: &AppHandle) -> Result<(), String> {
+    show_window_at_cursor(app, ACTION_MENU_LABEL)?;
+    app.emit(
+        "action-menu:open",
+        ActionMenuOpenPayload { selected_text: None },
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+pub fn hide_window(app: &AppHandle, label: &str) -> Result<(), String> {
+    get_window(app, label)?.hide().map_err(|error| error.to_string())
+}
+
+fn toggle_window_at_cursor(app: &AppHandle, label: &str) -> Result<(), String> {
+    let window = get_window(app, label)?;
     if window.is_visible().unwrap_or(false) {
         return window.hide().map_err(|error| error.to_string());
     }
-    show_main_at_cursor(app)
+    show_window_at_cursor(app, label)
 }
 
-fn show_main_at_cursor(app: &AppHandle) -> Result<(), String> {
-    let window = get_main(app)?;
+fn show_window_at_cursor(app: &AppHandle, label: &str) -> Result<(), String> {
+    let window = get_window(app, label)?;
     let cursor = cursor_position();
     let (x, y) = window_position(&window, cursor)?;
+    window
+        .set_visible_on_all_workspaces(true)
+        .map_err(|error| error.to_string())?;
     window
         .set_position(LogicalPosition::new(x, y))
         .map_err(|error| error.to_string())?;
     window.show().map_err(|error| error.to_string())?;
-    let _ = window.unminimize();
     window.set_focus().map_err(|error| error.to_string())?;
+    mark_window_shown(label);
     Ok(())
 }
 
-fn get_main(app: &AppHandle) -> Result<WebviewWindow, String> {
-    app.get_webview_window(MAIN_LABEL)
-        .ok_or_else(|| "main window not found".into())
+fn get_window(app: &AppHandle, label: &str) -> Result<WebviewWindow, String> {
+    app.get_webview_window(label)
+        .ok_or_else(|| format!("window not found: {label}"))
 }
 
-fn cursor_position() -> (f64, f64) {
+pub fn cursor_position() -> (f64, f64) {
     #[cfg(target_os = "macos")]
     {
         use mouse_position::mouse_position::Mouse;

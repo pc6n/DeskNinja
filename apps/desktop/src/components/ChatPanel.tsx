@@ -44,14 +44,25 @@ export function ChatPanel({
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, isStreaming, streamPhase]);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
+  async function submitDraft(): Promise<void> {
     const content = draft.trim();
     if (!content || isStreaming) {
       return;
     }
     setDraft("");
     await onSend(content);
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    await submitDraft();
+  }
+
+  function handleComposerKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>): void {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void submitDraft();
+    }
   }
 
   return (
@@ -102,8 +113,9 @@ export function ChatPanel({
           id="chat-input"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Type a message..."
-          rows={3}
+          onKeyDown={handleComposerKeyDown}
+          placeholder="Message… Enter to send, Shift+Enter for newline"
+          rows={2}
           disabled={isStreaming}
         />
         <button type="submit" disabled={isStreaming || draft.trim().length === 0}>

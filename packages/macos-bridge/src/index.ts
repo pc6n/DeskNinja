@@ -10,10 +10,17 @@ export interface ClipboardSnapshot {
   capturedAt: Date;
 }
 
+export interface AppSettings {
+  accessibilityPrompted: boolean;
+  rightClickMenuEnabled: boolean;
+}
+
 export interface MacOsBridge {
   getForegroundApp(): Promise<ForegroundAppInfo | null>;
   readClipboard(): Promise<ClipboardSnapshot | null>;
   writeClipboard(text: string): Promise<void>;
+  getSelectedText(): Promise<string | null>;
+  insertText(text: string): Promise<void>;
   getPermissions(): Promise<ToolPermission[]>;
   requestPermission(tool: ToolName): Promise<ToolPermission>;
 }
@@ -29,6 +36,14 @@ export class UnsupportedMacOsBridge implements MacOsBridge {
 
   async writeClipboard(_text: string): Promise<void> {
     throw new Error("Clipboard write is not available outside the desktop shell.");
+  }
+
+  async getSelectedText(): Promise<string | null> {
+    return null;
+  }
+
+  async insertText(_text: string): Promise<void> {
+    throw new Error("Insert text is not available outside the desktop shell.");
   }
 
   async getPermissions(): Promise<ToolPermission[]> {

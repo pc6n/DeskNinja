@@ -1,15 +1,18 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "identifier": "com.deskninja.app",
-  "windows": ["main", "quick-panel"],
+  "windows": ["main", "quick-panel", "action-menu"],
   "permissions": [
     "core:default",
     "shell:allow-open",
     "allow-ollama-commands",
     "allow-todo-commands",
+    "allow-macos-commands",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
     "global-shortcut:allow-unregister-all",
+    "clipboard-manager:allow-read-text",
+    "clipboard-manager:allow-write-text",
     "core:window:allow-show",
     "core:window:allow-hide",
     "core:window:allow-set-focus",
@@ -19,6 +22,11 @@
     "core:window:allow-current-monitor",
     "core:window:allow-scale-factor",
     "core:window:allow-unminimize",
-    "core:window:allow-outer-size"
+    "core:window:allow-outer-size",
+    "core:window:allow-set-visible-on-all-workspaces",
+    "core:window:allow-set-background-color",
+    "core:window:allow-set-shadow",
+    "core:window:allow-start-dragging",
+    "core:event:allow-emit"
   ]
 }

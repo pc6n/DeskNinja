@@ -7,16 +7,19 @@ import {
   OLLAMA_PROVIDER_ID,
 } from "@deskninja/model-providers";
 import { AppTabs, type AppTab } from "./components/AppTabs";
+import { PanelDragBar } from "./components/PanelDragBar";
 import { ChatPanel } from "./components/ChatPanel";
 import { LocalSetupPanel } from "./components/LocalSetupPanel";
 import { TodoPanel } from "./components/TodoPanel";
 import { useChatSession } from "./hooks/useChatSession";
 import { useLocalSetupWithClient } from "./hooks/useLocalSetup";
 import { useTodos } from "./hooks/useTodos";
+import { usePanelMode } from "./hooks/usePanelMode";
 import { openOllamaDownloadPage } from "./lib/openExternal";
 import { createDesktopProviderRegistry } from "./lib/providerRegistry";
 
 export function App() {
+  const isPanel = usePanelMode();
   const registry = useMemo(() => createDesktopProviderRegistry(), []);
   const localSetup = useLocalSetupWithClient();
   const todos = useTodos();
@@ -40,11 +43,12 @@ export function App() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="app-header">
+    <main className={`app-shell${isPanel ? " app-shell--panel" : ""}`}>
+      <PanelDragBar />
+      <header className={`app-header${isPanel ? " app-header--panel" : ""}`}>
         <div>
-          <p className="eyebrow">DeskNinja</p>
-          <h1>Desktop Assistant</h1>
+          {!isPanel ? <p className="eyebrow">DeskNinja</p> : null}
+          <h1>{isPanel ? "DeskNinja" : "Desktop Assistant"}</h1>
           <AppTabs
             activeTab={activeTab}
             openTodoCount={todos.openCount}
@@ -87,6 +91,7 @@ export function App() {
         ) : null}
       </header>
 
+      <div className="panel-scroll">
       {activeTab === "todos" ? (
         <TodoPanel
           todos={todos.todos}
@@ -121,6 +126,7 @@ export function App() {
           modelLabel={localSetup.state.selectedModel || DEFAULT_LOCAL_MODEL}
         />
       )}
+      </div>
     </main>
   );
 }

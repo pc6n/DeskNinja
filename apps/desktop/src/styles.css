@@ -14,6 +14,86 @@ body {
   min-height: 100vh;
 }
 
+body.panel-mode {
+  min-height: auto;
+  background: transparent;
+  overflow: hidden;
+}
+
+.app-shell--panel {
+  min-height: 100vh;
+  height: 100vh;
+  padding: 0.6rem;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid #2a3140;
+  background: #121722;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.panel-drag-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0.85rem;
+  margin: -0.15rem 0 0.1rem;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.panel-drag-bar:active {
+  cursor: grabbing;
+}
+
+.panel-drag-grip {
+  display: block;
+  width: 2.25rem;
+  height: 0.2rem;
+  border-radius: 999px;
+  background: #4a5568;
+}
+
+.app-header--panel h1 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #4a5568 transparent;
+}
+
+.panel-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel-scroll::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: #4a5568;
+}
+
+.panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: #5c6778;
+}
+
+.app-shell--panel .panel-scroll > .chat-panel,
+.app-shell--panel .panel-scroll > .todo-panel {
+  height: 100%;
+  min-height: 0;
+  border-radius: 0.55rem;
+}
+
+.app-shell--panel .panel-scroll > .setup-panel {
+  border-radius: 0.55rem;
+}
+
 .app-shell {
   display: grid;
   grid-template-rows: auto 1fr;
@@ -22,11 +102,30 @@ body {
   gap: 1rem;
 }
 
+.app-shell.app-shell--panel,
+.app-shell.app-shell--context {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell.app-shell--panel > .app-header--panel,
+.app-shell.app-shell--context > .app-header--panel {
+  flex-shrink: 0;
+}
+
+.app-shell.app-shell--panel .app-tabs {
+  margin-top: 0.4rem;
+}
+
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: end;
   gap: 1rem;
+}
+
+.app-header--panel {
+  align-items: flex-start;
 }
 
 .eyebrow {
@@ -228,10 +327,28 @@ body {
 .setup-panel {
   display: grid;
   gap: 1rem;
+  align-content: start;
   border: 1px solid #242b38;
   border-radius: 1rem;
   background: #121722;
   padding: 1.25rem;
+}
+
+.app-shell--panel .setup-panel {
+  padding: 0.85rem;
+  gap: 0.75rem;
+}
+
+.app-shell--panel .setup-panel h2 {
+  font-size: 1rem;
+}
+
+.app-shell--panel .model-grid {
+  gap: 0.5rem;
+}
+
+.app-shell--panel .model-card {
+  padding: 0.65rem;
 }
 
 .setup-panel h2 {
@@ -656,4 +773,200 @@ body {
   font-size: 0.6875rem;
   color: #6b7585;
   background: #0f1219;
+}
+
+.app-shell--context {
+  min-height: 100vh;
+  height: 100vh;
+}
+
+.app-shell--context .panel-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+
+.context-hint {
+  margin: 0.15rem 0 0;
+  font-size: 0.6875rem;
+  color: #6b7585;
+}
+
+.context-permission {
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  background: #1b2433;
+  border: 1px solid #2a3140;
+  font-size: 0.8125rem;
+}
+
+.context-permission p {
+  margin: 0 0 0.5rem;
+}
+
+.context-permission-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.context-permission-actions button {
+  padding: 0.35rem 0.65rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: #4f7cff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.context-permission-actions button.secondary {
+  background: #2a3140;
+}
+
+.context-actions {
+  min-height: 0;
+  overflow: auto;
+}
+
+.context-selection-preview {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: #8b95a7;
+}
+
+.context-empty {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: #6b7585;
+}
+
+.context-action-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.context-action-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: #171d29;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.context-action-btn:hover:not(:disabled) {
+  background: #1a2030;
+}
+
+.context-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.context-action-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.context-action-desc {
+  font-size: 0.6875rem;
+  color: #6b7585;
+}
+
+.context-custom-entry {
+  margin-top: 0.35rem;
+  width: 100%;
+  padding: 0.45rem;
+  border: 1px dashed #2a3140;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: #8b95a7;
+  cursor: pointer;
+}
+
+.context-custom,
+.context-result {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 0;
+}
+
+.context-back {
+  justify-self: start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #8b95a7;
+  cursor: pointer;
+  font-size: 0.8125rem;
+}
+
+.context-custom textarea,
+.context-result-body {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.45rem;
+  border: 1px solid #2a3140;
+  background: #0f1115;
+  color: inherit;
+  font-size: 0.875rem;
+}
+
+.context-result-body {
+  min-height: 5rem;
+  max-height: 10rem;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.context-result-actions,
+.context-custom button:last-of-type {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.context-result-actions button,
+.context-custom button:last-of-type {
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: #4f7cff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.context-result-actions button.secondary {
+  background: #2a3140;
+}
+
+.context-result-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.context-error {
+  margin: 0;
+  color: #ff8f8f;
+  font-size: 0.8125rem;
+}
+
+.context-settings {
+  padding: 0.35rem 0;
+  border-top: 1px solid #242b38;
+  font-size: 0.6875rem;
+  color: #6b7585;
+}
+
+.context-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
 }

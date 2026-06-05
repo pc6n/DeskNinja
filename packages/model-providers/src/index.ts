@@ -28,3 +28,9 @@ export {
 } from "./ollama/catalog.js";
 export type { LocalModelOption } from "./ollama/catalog.js";
 export type { OllamaHealth, OllamaChatMessage, PullProgress } from "./ollama/types.js";
+export {
+  CONTEXT_ACTIONS,
+  buildContextMessages,
+  findContextAction,
+} from "./context/presets.js";
+export type { ContextActionDefinition, ContextActionId } from "./context/presets.js";

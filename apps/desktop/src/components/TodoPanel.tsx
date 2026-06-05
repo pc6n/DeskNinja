@@ -145,7 +145,7 @@ export function TodoPanel({
 
       <footer className="todo-footer">
         <span>{openTodos.length} open</span>
-        <span>⌘⇧Space at cursor · again to hide</span>
+        <span>⌘J at cursor · again to hide</span>
       </footer>
     </section>
   );
