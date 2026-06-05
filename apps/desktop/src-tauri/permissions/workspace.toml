@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-workspace-commands"
+description = "Allows DeskNinja agent tools to read files inside allowed workspace folders."
+commands.allow = [
+  "read_workspace_file",
+  "read_workspace_files",
+  "list_workspace_dir",
+  "run_readonly_command"
+]

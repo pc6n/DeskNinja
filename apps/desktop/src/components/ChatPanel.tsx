@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveChatContextUsage } from "../lib/contextUsage";
-import type { ChatMessage, TokenUsage } from "@deskninja/ai-core";
+import type { ChatMessage, TokenUsage, ToolActivity } from "@deskninja/ai-core";
 import { ContextUsageBar } from "./ContextUsageBar";
 import type { MessageMetrics, StreamPhase } from "../lib/chatMetrics";
 import { getLatestAssistantMessage } from "../lib/chatMetrics";
@@ -21,6 +21,8 @@ interface ChatPanelProps {
   modelLabel?: string;
   contextUsage?: TokenUsage;
   contextLimit?: number;
+  toolActivity?: ToolActivity[];
+  agentMode?: boolean;
   onSend: (content: string) => Promise<void>;
 }
 
@@ -33,6 +35,8 @@ export function ChatPanel({
   modelLabel,
   contextUsage,
   contextLimit,
+  toolActivity = [],
+  agentMode = false,
   onSend,
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
@@ -87,9 +91,14 @@ export function ChatPanel({
           </p>
         ) : (
           messages
+            .filter((message) => message.role !== "tool")
             .filter(
               (message) =>
-                !(message.role === "assistant" && message.content.length === 0 && showThinking),
+                !(
+                  message.role === "assistant" &&
+                  message.content.length === 0 &&
+                  (showThinking || (message.toolCalls?.length ?? 0) > 0)
+                ),
             )
             .map((message, index, visibleMessages) => {
             const isLatestAssistant =
@@ -117,6 +126,15 @@ export function ChatPanel({
           })
         )}
         <ThinkingIndicator visible={showThinking} />
+        {toolActivity.length > 0 ? (
+          <ul className="tool-activity" aria-live="polite">
+            {toolActivity.map((activity) => (
+              <li key={`${activity.tool}-${activity.label}`} data-status={activity.status}>
+                {activity.label}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
       <ContextUsageBar
         usage={resolvedContext?.usage}
@@ -133,7 +151,11 @@ export function ChatPanel({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleComposerKeyDown}
-          placeholder="Message… /todo Buy milk to add a todo, Enter to send"
+          placeholder={
+            agentMode
+              ? "Ask about files in your workspace… /todo Buy milk, Enter to send"
+              : "Message… /todo Buy milk to add a todo, Enter to send"
+          }
           rows={2}
           disabled={isStreaming}
         />

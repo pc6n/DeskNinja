@@ -26,6 +26,7 @@ export {
   findLocalModel,
   formatModelOptionLabel,
   getModelContextTokens,
+  modelSupportsTools,
 } from "./ollama/catalog.js";
 export type { LocalModelOption } from "./ollama/catalog.js";
 export type {
@@ -33,6 +34,7 @@ export type {
   ChatStreamUsage,
   OllamaHealth,
   OllamaChatMessage,
+  OllamaToolCall,
   PullProgress,
 } from "./ollama/types.js";
 export {

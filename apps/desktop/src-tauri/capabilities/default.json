@@ -9,6 +9,7 @@
     "allow-ollama-commands",
     "allow-todo-commands",
     "allow-macos-commands",
+    "allow-workspace-commands",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
     "global-shortcut:allow-unregister-all",

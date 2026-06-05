@@ -5,6 +5,7 @@ import type {
   ChatStreamUsage,
   OllamaChatMessage,
   OllamaHealth,
+  OllamaToolCall,
   OllamaTransport,
   PullProgress,
 } from "@deskninja/model-providers";
@@ -15,6 +16,13 @@ interface TauriOllamaHealth {
   reachable: boolean;
   version?: string;
   error?: string;
+}
+
+interface TauriChatMessageInput {
+  role: string;
+  content: string;
+  toolName?: string;
+  toolCalls?: unknown[];
 }
 
 export function createDesktopOllamaTransport(): OllamaTransport {
@@ -87,29 +95,42 @@ class TauriOllamaTransport implements OllamaTransport {
     }
   }
 
-  async *chatStream(model: string, messages: OllamaChatMessage[]): AsyncGenerator<ChatStreamEvent> {
-    const queue: string[] = [];
+  async *chatStream(
+    model: string,
+    messages: OllamaChatMessage[],
+    tools?: unknown[],
+  ): AsyncGenerator<ChatStreamEvent> {
+    const queue: ChatStreamEvent[] = [];
     let resolveWait: (() => void) | null = null;
     let unlisten: UnlistenFn | null = null;
+    let toolUnlisten: UnlistenFn | null = null;
     let usageUnlisten: UnlistenFn | null = null;
     let invokeError: Error | null = null;
     let finished = false;
-    let usage: ChatStreamUsage | undefined;
 
-    const waitForDelta = (): Promise<void> =>
+    const waitForEvent = (): Promise<void> =>
       new Promise((resolve) => {
         resolveWait = resolve;
       });
 
     unlisten = await listen<string>("ollama-chat-delta", (event) => {
-      queue.push(event.payload);
+      queue.push({ type: "delta", content: event.payload });
+      resolveWait?.();
+    });
+    toolUnlisten = await listen<OllamaToolCall[]>("ollama-chat-tool-calls", (event) => {
+      queue.push({ type: "tool_calls", toolCalls: event.payload });
       resolveWait?.();
     });
     usageUnlisten = await listen<ChatStreamUsage>("ollama-chat-usage", (event) => {
-      usage = event.payload;
+      queue.push({ type: "usage", usage: event.payload });
+      resolveWait?.();
     });
 
-    const invokeTask = invoke("stream_ollama_chat", { model, messages })
+    const invokeTask = invoke("stream_ollama_chat", {
+      model,
+      messages: toTauriMessages(messages),
+      tools: tools?.length ? tools : null,
+    })
       .catch((error: unknown) => {
         invokeError = error instanceof Error ? error : new Error(String(error));
       })
@@ -120,24 +141,43 @@ class TauriOllamaTransport implements OllamaTransport {
 
     while (!finished || queue.length > 0) {
       if (queue.length === 0) {
-        await waitForDelta();
+        await waitForEvent();
         continue;
       }
-      yield { type: "delta", content: queue.shift() as string };
+      yield queue.shift() as ChatStreamEvent;
     }
 
     await invokeTask;
     await unlisten?.();
+    await toolUnlisten?.();
     await usageUnlisten?.();
 
     if (invokeError) {
       throw invokeError;
     }
-
-    if (usage) {
-      yield { type: "usage", usage };
-    }
   }
+}
+
+function toTauriMessages(messages: OllamaChatMessage[]): TauriChatMessageInput[] {
+  return messages.map((message) => {
+    const mapped: TauriChatMessageInput = {
+      role: message.role,
+      content: message.content,
+    };
+    if (message.toolName) {
+      mapped.toolName = message.toolName;
+    }
+    if (message.toolCalls?.length) {
+      mapped.toolCalls = message.toolCalls.map((call) => ({
+        id: call.id,
+        function: {
+          name: call.name,
+          arguments: call.arguments,
+        },
+      }));
+    }
+    return mapped;
+  });
 }
 
 export async function ensureOllamaRunning(): Promise<OllamaHealth> {

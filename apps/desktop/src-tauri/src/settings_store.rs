@@ -9,6 +9,8 @@ pub struct AppSettings {
     pub accessibility_prompted: bool,
     #[serde(default)]
     pub right_click_menu_enabled: bool,
+    #[serde(default)]
+    pub allowed_paths: Vec<String>,
 }
 
 impl Default for AppSettings {
@@ -16,6 +18,7 @@ impl Default for AppSettings {
         Self {
             accessibility_prompted: false,
             right_click_menu_enabled: false,
+            allowed_paths: Vec::new(),
         }
     }
 }
@@ -46,6 +49,9 @@ impl SettingsStore {
         if let Some(value) = partial.right_click_menu_enabled {
             self.settings.right_click_menu_enabled = value;
         }
+        if let Some(value) = partial.allowed_paths {
+            self.settings.allowed_paths = value;
+        }
         self.persist();
         self.settings.clone()
     }
@@ -67,4 +73,6 @@ pub struct AppSettingsPatch {
     pub accessibility_prompted: Option<bool>,
     #[serde(default)]
     pub right_click_menu_enabled: Option<bool>,
+    #[serde(default)]
+    pub allowed_paths: Option<Vec<String>>,
 }

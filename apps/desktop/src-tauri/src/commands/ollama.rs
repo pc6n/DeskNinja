@@ -1,5 +1,6 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Duration;
@@ -29,6 +30,18 @@ pub struct PullProgressPayload {
 pub struct ChatMessageInput {
     role: String,
     content: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tool_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tool_calls: Option<Vec<Value>>,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatToolCallPayload {
+    id: Option<String>,
+    name: String,
+    arguments: Value,
 }
 
 #[derive(Deserialize)]
@@ -72,6 +85,7 @@ struct ChatChunk {
 #[derive(Deserialize)]
 struct ChatMessagePartial {
     content: Option<String>,
+    tool_calls: Option<Vec<Value>>,
 }
 
 #[tauri::command]
@@ -145,15 +159,21 @@ pub async fn stream_ollama_chat(
     app: AppHandle,
     model: String,
     messages: Vec<ChatMessageInput>,
+    tools: Option<Vec<Value>>,
 ) -> Result<(), String> {
     let client = build_streaming_client()?;
+    let mut body = serde_json::json!({
+        "model": model,
+        "messages": messages,
+        "stream": true
+    });
+    if let Some(tool_defs) = tools {
+        body["tools"] = serde_json::Value::Array(tool_defs);
+    }
+
     let response = client
         .post(format!("{OLLAMA_BASE_URL}/api/chat"))
-        .json(&serde_json::json!({
-            "model": model,
-            "messages": messages,
-            "stream": true
-        }))
+        .json(&body)
         .send()
         .await
         .map_err(|error| error.to_string())?;
@@ -196,9 +216,20 @@ fn emit_chat_delta(app: &AppHandle, line: &str) -> Result<(), String> {
         Err(_) => return Ok(()),
     };
 
-    if let Some(content) = payload.message.and_then(|message| message.content) {
-        app.emit("ollama-chat-delta", content)
-            .map_err(|error| error.to_string())?;
+    if let Some(message) = payload.message {
+        if let Some(content) = message.content {
+            if !content.is_empty() {
+                app.emit("ollama-chat-delta", content)
+                    .map_err(|error| error.to_string())?;
+            }
+        }
+        if let Some(tool_calls) = message.tool_calls {
+            let mapped = map_tool_calls(tool_calls);
+            if !mapped.is_empty() {
+                app.emit("ollama-chat-tool-calls", mapped)
+                    .map_err(|error| error.to_string())?;
+            }
+        }
     }
 
     if payload.done == Some(true) {
@@ -218,6 +249,26 @@ fn emit_chat_delta(app: &AppHandle, line: &str) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+fn map_tool_calls(tool_calls: Vec<Value>) -> Vec<ChatToolCallPayload> {
+    tool_calls
+        .into_iter()
+        .filter_map(|call| {
+            let id = call.get("id").and_then(Value::as_str).map(str::to_string);
+            let function = call.get("function")?;
+            let name = function.get("name")?.as_str()?.to_string();
+            let arguments = function
+                .get("arguments")
+                .cloned()
+                .unwrap_or(Value::Object(serde_json::Map::new()));
+            Some(ChatToolCallPayload {
+                id,
+                name,
+                arguments,
+            })
+        })
+        .collect()
 }
 
 async fn stream_pull_progress(app: &AppHandle, response: reqwest::Response) -> Result<(), String> {

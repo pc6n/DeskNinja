@@ -5,6 +5,7 @@ export interface LocalModelOption {
   description: string;
   speed: "fastest" | "fast" | "balanced" | "quality";
   contextTokens: number;
+  supportsTools?: boolean;
 }
 
 export const FASTEST_LOCAL_MODEL = "llama3.2:1b";
@@ -18,6 +19,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     speed: "fastest",
     description: "Fastest option. Best for quick answers and low latency.",
     contextTokens: 128_000,
+    supportsTools: false,
   },
   {
     id: "llama3.2:3b",
@@ -26,6 +28,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     speed: "fast",
     description: "Very fast with slightly better answers than 1B.",
     contextTokens: 128_000,
+    supportsTools: true,
   },
   {
     id: "phi3.5:mini",
@@ -34,6 +37,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     speed: "fast",
     description: "Compact and quick, strong at short instructions.",
     contextTokens: 128_000,
+    supportsTools: true,
   },
   {
     id: "qwen3.5:4b",
@@ -42,6 +46,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     speed: "balanced",
     description: "Balanced speed and quality for everyday tasks.",
     contextTokens: 32_768,
+    supportsTools: true,
   },
   {
     id: "gemma4:e4b",
@@ -50,6 +55,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     speed: "balanced",
     description: "Higher quality, slower downloads and responses.",
     contextTokens: 8192,
+    supportsTools: true,
   },
   {
     id: "gemma4:26b",
@@ -58,6 +64,7 @@ export const LOCAL_MODEL_CATALOG: LocalModelOption[] = [
     speed: "quality",
     description: "Best quality here, but much slower on local hardware.",
     contextTokens: 8192,
+    supportsTools: true,
   },
 ];
 
@@ -70,8 +77,13 @@ export function getModelContextTokens(modelId: string): number | undefined {
 }
 
 export function formatModelOptionLabel(model: LocalModelOption): string {
+  const toolsHint = model.supportsTools ? " · Agent" : "";
   if (model.speed === "fastest") {
     return `${model.label} (${model.sizeLabel}) · Fastest`;
   }
-  return `${model.label} (${model.sizeLabel})`;
+  return `${model.label} (${model.sizeLabel})${toolsHint}`;
+}
+
+export function modelSupportsTools(modelId: string): boolean {
+  return findLocalModel(modelId)?.supportsTools ?? false;
 }

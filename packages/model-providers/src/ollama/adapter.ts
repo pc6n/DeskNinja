@@ -1,6 +1,7 @@
 import type {
   ChatRequest,
   ChatResponse,
+  ChatToolCall,
   ProviderClient,
   ProviderConfig,
   ProviderError,
@@ -9,7 +10,7 @@ import type {
 } from "@deskninja/ai-core";
 import { createMessage, err, ok } from "@deskninja/ai-core";
 import { OllamaClient } from "./client.js";
-import type { OllamaTransport } from "./types.js";
+import type { OllamaChatMessage, OllamaToolCall, OllamaTransport } from "./types.js";
 import { DEFAULT_LOCAL_MODEL } from "./catalog.js";
 
 export const OLLAMA_PROVIDER_ID = "ollama";
@@ -32,7 +33,11 @@ export class OllamaAdapter implements ProviderClient {
     let content = "";
 
     try {
-      for await (const event of this.client.chatStream(model, toOllamaMessages(request))) {
+      for await (const event of this.client.chatStream(
+        model,
+        toOllamaMessages(request),
+        request.tools,
+      )) {
         if (event.type === "delta") {
           content += event.content;
         }
@@ -55,18 +60,34 @@ export class OllamaAdapter implements ProviderClient {
     try {
       let content = "";
       let usage: TokenUsage | undefined;
-      for await (const event of this.client.chatStream(model, toOllamaMessages(request))) {
+      let toolCalls: ChatToolCall[] = [];
+
+      for await (const event of this.client.chatStream(
+        model,
+        toOllamaMessages(request),
+        request.tools,
+      )) {
         if (event.type === "delta") {
           content += event.content;
           yield { type: "delta", messageId, content: event.content };
           continue;
         }
+        if (event.type === "tool_calls") {
+          toolCalls = mapToolCalls(event.toolCalls);
+          yield { type: "tool_calls", messageId, toolCalls };
+          continue;
+        }
         usage = event.usage;
+      }
+
+      const message = createMessage("assistant", content);
+      if (toolCalls.length > 0) {
+        message.toolCalls = toolCalls;
       }
 
       yield {
         type: "done",
-        message: { ...createMessage("assistant", content), id: messageId },
+        message: { ...message, id: messageId },
         usage,
       };
     } catch (error) {
@@ -79,15 +100,58 @@ export class OllamaAdapter implements ProviderClient {
   }
 }
 
-function toOllamaMessages(
-  request: ChatRequest,
-): Array<{ role: "user" | "assistant" | "system"; content: string }> {
+function toOllamaMessages(request: ChatRequest): OllamaChatMessage[] {
   return request.messages
-    .filter((message) => message.role === "user" || message.role === "assistant" || message.role === "system")
-    .map((message) => ({
-      role: message.role as "user" | "assistant" | "system",
-      content: message.content,
-    }));
+    .filter(
+      (message) =>
+        message.role === "user" ||
+        message.role === "assistant" ||
+        message.role === "system" ||
+        message.role === "tool",
+    )
+    .map((message) => {
+      if (message.role === "tool") {
+        return {
+          role: "tool" as const,
+          content: message.content,
+          toolName: message.toolName ?? message.toolCallId ?? "tool",
+        };
+      }
+
+      const mapped: OllamaChatMessage = {
+        role: message.role as "user" | "assistant" | "system",
+        content: message.content,
+      };
+
+      if (message.toolCalls?.length) {
+        mapped.toolCalls = message.toolCalls.map((call) => ({
+          id: call.id,
+          name: call.name,
+          arguments: call.arguments,
+        }));
+      }
+
+      return mapped;
+    });
+}
+
+function mapToolCalls(toolCalls: OllamaToolCall[]): ChatToolCall[] {
+  return toolCalls.map((call, index) => ({
+    id: call.id ?? `tool-${index}`,
+    name: call.name,
+    arguments: parseToolArguments(call.arguments),
+  }));
+}
+
+function parseToolArguments(argumentsValue: OllamaToolCall["arguments"]): Record<string, unknown> {
+  if (typeof argumentsValue === "string") {
+    try {
+      return JSON.parse(argumentsValue) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+  return argumentsValue;
 }
 
 function mapProviderError(error: unknown): ProviderError {

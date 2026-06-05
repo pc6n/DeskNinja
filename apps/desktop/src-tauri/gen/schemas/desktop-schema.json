@@ -411,6 +411,12 @@
           "markdownDescription": "Allows DeskNinja to manage local todos."
         },
         {
+          "description": "Allows DeskNinja agent tools to read files inside allowed workspace folders.",
+          "type": "string",
+          "const": "allow-workspace-commands",
+          "markdownDescription": "Allows DeskNinja agent tools to read files inside allowed workspace folders."
+        },
+        {
           "description": "No features are enabled by default, as we believe\nthe clipboard can be inherently dangerous and it is \napplication specific if read and/or write access is needed.\n\nClipboard interaction needs to be explicitly enabled.\n",
           "type": "string",
           "const": "clipboard-manager:default",

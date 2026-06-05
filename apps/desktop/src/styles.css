@@ -1267,3 +1267,103 @@ body.panel-mode {
   gap: 0.4rem;
   cursor: pointer;
 }
+
+.agent-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  color: #c8d0dc;
+}
+
+.agent-hint {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.4rem;
+  background: #1e2430;
+  color: #9aa5b5;
+  font-size: 0.8125rem;
+}
+
+.workspace-settings {
+  margin-bottom: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #242b38;
+  border-radius: 0.5rem;
+  background: #151a22;
+}
+
+.workspace-settings h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.875rem;
+}
+
+.workspace-settings-hint {
+  margin: 0 0 0.5rem;
+  color: #8b95a5;
+  font-size: 0.75rem;
+}
+
+.workspace-folder-list {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+  font-size: 0.8125rem;
+}
+
+.workspace-folder-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.workspace-folder-list button {
+  border: none;
+  background: transparent;
+  color: #8b95a5;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.workspace-folder-add {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.workspace-folder-add input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #2a3140;
+  border-radius: 0.35rem;
+  background: #0f1319;
+  color: #e8ecf2;
+}
+
+.workspace-folder-add button {
+  padding: 0.35rem 0.6rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: #2a3140;
+  color: #e8ecf2;
+  cursor: pointer;
+}
+
+.tool-activity {
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.55rem;
+  list-style: none;
+  border-radius: 0.4rem;
+  background: #1a2030;
+  font-size: 0.75rem;
+  color: #9eb0cc;
+}
+
+.tool-activity li[data-status="running"] {
+  color: #c5d4ef;
+}
+
+.tool-activity li[data-status="error"] {
+  color: #ff9b9b;
+}

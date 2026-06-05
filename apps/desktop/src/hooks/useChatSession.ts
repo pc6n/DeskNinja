@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { ChatMessage, TokenUsage } from "@deskninja/ai-core";
-import { ConversationService } from "@deskninja/ai-core";
+import type { ChatMessage, TokenUsage, ToolActivity, ToolExecutor } from "@deskninja/ai-core";
+import { AgentService, ConversationService } from "@deskninja/ai-core";
 import { OLLAMA_PROVIDER_ID } from "@deskninja/model-providers";
 import {
   buildMessageMetrics,
@@ -17,28 +17,41 @@ interface StreamTimingState {
 }
 
 interface UseChatSessionOptions {
-  service: ConversationService;
+  conversationService: ConversationService;
+  agentService: AgentService;
+  toolExecutor: ToolExecutor;
   providerId: string;
   selectedModel?: string;
+  agentMode: boolean;
 }
 
-export function useChatSession({ service, providerId, selectedModel }: UseChatSessionOptions) {
+export function useChatSession({
+  conversationService,
+  agentService,
+  toolExecutor,
+  providerId,
+  selectedModel,
+  agentMode,
+}: UseChatSessionOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamPhase, setStreamPhase] = useState<StreamPhase>("idle");
   const [metricsByMessageId, setMetricsByMessageId] = useState<Record<string, MessageMetrics>>({});
   const [streamingExcludeIds, setStreamingExcludeIds] = useState<Set<string>>(new Set());
   const [contextUsage, setContextUsage] = useState<TokenUsage | undefined>();
+  const [toolActivity, setToolActivity] = useState<ToolActivity[]>([]);
   const streamTimingRef = useRef<StreamTimingState>({
     startedAt: 0,
     firstTokenAt: 0,
     assistantIdsBeforeSend: new Set(),
   });
 
+  const activeService = agentMode ? agentService : conversationService;
+
   const sendMessage = useCallback(
     async (content: string): Promise<void> => {
       const startedAt = performance.now();
-      const assistantIdsBeforeSend = collectAssistantIds(service.getState().messages);
+      const assistantIdsBeforeSend = collectAssistantIds(activeService.getState().messages);
 
       streamTimingRef.current = {
         startedAt,
@@ -46,35 +59,57 @@ export function useChatSession({ service, providerId, selectedModel }: UseChatSe
         assistantIdsBeforeSend,
       };
       setStreamingExcludeIds(assistantIdsBeforeSend);
+      setToolActivity([]);
 
       setIsStreaming(true);
-      setStreamPhase("thinking");
-      service.setProvider(providerId);
+      setStreamPhase(agentMode ? "thinking" : "thinking");
+      activeService.setProvider(providerId);
 
-      await service.sendMessage({
-        content,
-        model: providerId === OLLAMA_PROVIDER_ID ? selectedModel : undefined,
-        onUpdate: (state) => {
-          setMessages([...state.messages]);
-          if (state.contextUsage) {
-            setContextUsage(state.contextUsage);
-          }
+      const model = providerId === OLLAMA_PROVIDER_ID ? selectedModel : undefined;
+      const onUpdate = (state: { messages: ChatMessage[]; contextUsage?: TokenUsage }) => {
+        setMessages([...state.messages]);
+        if (state.contextUsage) {
+          setContextUsage(state.contextUsage);
+        }
 
-          const timing = streamTimingRef.current;
-          const activeAssistant = findActiveAssistantMessage(
-            state.messages,
-            timing.assistantIdsBeforeSend,
-          );
+        const timing = streamTimingRef.current;
+        const activeAssistant = findActiveAssistantMessage(
+          state.messages,
+          timing.assistantIdsBeforeSend,
+        );
 
-          if (activeAssistant?.content && timing.firstTokenAt === 0) {
-            timing.firstTokenAt = performance.now();
-            setStreamPhase("typing");
-          }
-        },
-      });
+        if (activeAssistant?.content && timing.firstTokenAt === 0) {
+          timing.firstTokenAt = performance.now();
+          setStreamPhase("typing");
+        }
+      };
+
+      if (agentMode) {
+        await agentService.sendMessage({
+          content,
+          model,
+          executor: toolExecutor,
+          onUpdate,
+          onToolActivity: (activity) => {
+            setToolActivity((current) => {
+              const withoutTool = current.filter((item) => item.tool !== activity.tool);
+              return [...withoutTool, activity];
+            });
+            if (activity.status === "running") {
+              setStreamPhase("thinking");
+            }
+          },
+        });
+      } else {
+        await conversationService.sendMessage({
+          content,
+          model,
+          onUpdate,
+        });
+      }
 
       const activeAssistant = findActiveAssistantMessage(
-        service.getState().messages,
+        activeService.getState().messages,
         assistantIdsBeforeSend,
       );
 
@@ -95,7 +130,15 @@ export function useChatSession({ service, providerId, selectedModel }: UseChatSe
       setIsStreaming(false);
       setStreamingExcludeIds(new Set());
     },
-    [providerId, selectedModel, service],
+    [
+      activeService,
+      agentMode,
+      agentService,
+      conversationService,
+      providerId,
+      selectedModel,
+      toolExecutor,
+    ],
   );
 
   return useMemo(
@@ -107,7 +150,17 @@ export function useChatSession({ service, providerId, selectedModel }: UseChatSe
       sendMessage,
       streamingExcludeIds,
       contextUsage,
+      toolActivity,
     }),
-    [messages, isStreaming, streamPhase, metricsByMessageId, sendMessage, streamingExcludeIds, contextUsage],
+    [
+      messages,
+      isStreaming,
+      streamPhase,
+      metricsByMessageId,
+      sendMessage,
+      streamingExcludeIds,
+      contextUsage,
+      toolActivity,
+    ],
   );
 }

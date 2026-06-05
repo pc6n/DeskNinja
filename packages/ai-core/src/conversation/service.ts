@@ -105,6 +105,10 @@ export class ConversationService {
       return this.upsertAssistant(event.messageId, current + event.content);
     }
 
+    if (event.type === "tool_calls") {
+      return this.state;
+    }
+
     if (event.type === "done") {
       const next = this.upsertAssistant(event.message.id, event.message.content, event.message);
       return {
@@ -113,12 +117,16 @@ export class ConversationService {
       };
     }
 
-    const errorMessage = createMessage("assistant", `Error: ${event.error.message}`);
-    return {
-      ...this.state,
-      messages: [...this.state.messages, errorMessage],
-      isStreaming: false,
-    };
+    if (event.type === "error") {
+      const errorMessage = createMessage("assistant", `Error: ${event.error.message}`);
+      return {
+        ...this.state,
+        messages: [...this.state.messages, errorMessage],
+        isStreaming: false,
+      };
+    }
+
+    return this.state;
   }
 
   private findAssistant(messageId: string): ChatMessage | undefined {

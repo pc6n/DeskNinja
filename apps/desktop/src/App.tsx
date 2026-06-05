@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { ConversationService } from "@deskninja/ai-core";
+import { AgentService, ConversationService } from "@deskninja/ai-core";
 import {
   DEFAULT_LOCAL_MODEL,
   formatModelOptionLabel,
   getModelContextTokens,
   LOCAL_MODEL_CATALOG,
+  modelSupportsTools,
   OLLAMA_PROVIDER_ID,
 } from "@deskninja/model-providers";
 import { AppTabs, type AppTab } from "./components/AppTabs";
@@ -13,6 +14,8 @@ import { PanelResizeHandles } from "./components/PanelResizeHandles";
 import { ChatPanel } from "./components/ChatPanel";
 import { LocalSetupPanel } from "./components/LocalSetupPanel";
 import { TodoPanel } from "./components/TodoPanel";
+import { WorkspaceFoldersSettings } from "./components/WorkspaceFoldersSettings";
+import { useAppSettings } from "./hooks/useAppSettings";
 import { useChatSession } from "./hooks/useChatSession";
 import { useLocalSetupWithClient } from "./hooks/useLocalSetup";
 import { useTodos } from "./hooks/useTodos";
@@ -23,6 +26,7 @@ import { showAboutWindow } from "./lib/appInfo";
 import { parseChatTodoCommands } from "./lib/chatTodos";
 import { openOllamaDownloadPage } from "./lib/openExternal";
 import { createDesktopProviderRegistry } from "./lib/providerRegistry";
+import { createDesktopToolExecutor } from "./lib/toolExecutor";
 
 export function App() {
   const isPanel = usePanelMode();
@@ -32,14 +36,26 @@ export function App() {
   const localSetup = useLocalSetupWithClient();
   const todos = useTodos();
   const defaultProviderId = OLLAMA_PROVIDER_ID;
-  const [service] = useState(() => new ConversationService(registry, defaultProviderId));
+  const toolExecutor = useMemo(() => createDesktopToolExecutor(), []);
+  const [conversationService] = useState(
+    () => new ConversationService(registry, defaultProviderId),
+  );
+  const [agentService] = useState(() => new AgentService(registry, defaultProviderId));
   const [providerId, setProviderId] = useState(defaultProviderId);
   const [activeTab, setActiveTab] = useState<AppTab>("chat");
+  const [agentMode, setAgentMode] = useState(false);
+  const appSettings = useAppSettings();
+  const selectedModel = localSetup.state.selectedModel;
+  const toolsSupported =
+    providerId === OLLAMA_PROVIDER_ID && modelSupportsTools(selectedModel);
 
   const chat = useChatSession({
-    service,
+    conversationService,
+    agentService,
+    toolExecutor,
     providerId,
-    selectedModel: localSetup.state.selectedModel,
+    selectedModel,
+    agentMode: agentMode && toolsSupported,
   });
 
   const providers = registry.list();
@@ -51,7 +67,8 @@ export function App() {
 
   function handleProviderChange(nextProviderId: string): void {
     setProviderId(nextProviderId);
-    service.setProvider(nextProviderId);
+    conversationService.setProvider(nextProviderId);
+    agentService.setProvider(nextProviderId);
   }
 
   async function handleChatSend(content: string): Promise<void> {
@@ -111,20 +128,31 @@ export function App() {
               </select>
             </label>
             {providerId === OLLAMA_PROVIDER_ID ? (
-              <label className="provider-select">
-                <span>Local model</span>
-                <select
-                  value={localSetup.state.selectedModel}
-                  onChange={(event) => void localSetup.switchLocalModel(event.target.value)}
-                  disabled={chat.isStreaming}
-                >
-                  {LOCAL_MODEL_CATALOG.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {formatModelOptionLabel(model)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <>
+                <label className="provider-select">
+                  <span>Local model</span>
+                  <select
+                    value={selectedModel}
+                    onChange={(event) => void localSetup.switchLocalModel(event.target.value)}
+                    disabled={chat.isStreaming}
+                  >
+                    {LOCAL_MODEL_CATALOG.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {formatModelOptionLabel(model)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="agent-toggle">
+                  <input
+                    type="checkbox"
+                    checked={agentMode && toolsSupported}
+                    disabled={!toolsSupported || chat.isStreaming}
+                    onChange={(event) => setAgentMode(event.target.checked)}
+                  />
+                  <span>Agent</span>
+                </label>
+              </>
             ) : null}
           </div>
         ) : null}
@@ -155,17 +183,34 @@ export function App() {
           onStartOllama={localSetup.startOllamaApp}
         />
       ) : (
-        <ChatPanel
-          messages={chat.messages}
-          isStreaming={chat.isStreaming}
-          streamPhase={chat.streamPhase}
-          metricsByMessageId={chat.metricsByMessageId}
-          streamingExcludeIds={chat.streamingExcludeIds}
-          onSend={handleChatSend}
-          modelLabel={localSetup.state.selectedModel || DEFAULT_LOCAL_MODEL}
-          contextUsage={chat.contextUsage}
-          contextLimit={contextLimit}
-        />
+        <>
+          {agentMode && toolsSupported && appSettings.settings ? (
+            <WorkspaceFoldersSettings
+              settings={appSettings.settings}
+              onChange={(next) => {
+                void appSettings.updateAllowedPaths(next.allowedPaths ?? []);
+              }}
+            />
+          ) : null}
+          {!toolsSupported && providerId === OLLAMA_PROVIDER_ID ? (
+            <p className="agent-hint">
+              Agent mode needs a tool-capable model (3B+ or Qwen). Switch models to enable file tools.
+            </p>
+          ) : null}
+          <ChatPanel
+            messages={chat.messages}
+            isStreaming={chat.isStreaming}
+            streamPhase={chat.streamPhase}
+            metricsByMessageId={chat.metricsByMessageId}
+            streamingExcludeIds={chat.streamingExcludeIds}
+            toolActivity={chat.toolActivity}
+            onSend={handleChatSend}
+            modelLabel={selectedModel || DEFAULT_LOCAL_MODEL}
+            contextUsage={chat.contextUsage}
+            contextLimit={contextLimit}
+            agentMode={agentMode && toolsSupported}
+          />
+        </>
       )}
       </div>
     </main>

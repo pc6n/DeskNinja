@@ -39,6 +39,11 @@ export function useAppSettings() {
     await requestAccessibilityPermission();
   }
 
+  async function updateAllowedPaths(allowedPaths: string[]): Promise<void> {
+    const next = await patchAppSettings({ allowedPaths });
+    setSettings(next);
+  }
+
   return {
     settings,
     accessibilityTrusted,
@@ -46,5 +51,6 @@ export function useAppSettings() {
     refresh,
     markAccessibilityPrompted,
     openAccessibilitySettings,
+    updateAllowedPaths,
   };
 }

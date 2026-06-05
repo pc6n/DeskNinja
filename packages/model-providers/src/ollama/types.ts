@@ -11,9 +11,17 @@ export interface PullProgress {
   percent?: number;
 }
 
+export interface OllamaToolCall {
+  id?: string;
+  name: string;
+  arguments: Record<string, unknown> | string;
+}
+
 export interface OllamaChatMessage {
-  role: "user" | "assistant" | "system";
+  role: "user" | "assistant" | "system" | "tool";
   content: string;
+  toolName?: string;
+  toolCalls?: OllamaToolCall[];
 }
 
 export interface OllamaTagsResponse {
@@ -25,7 +33,14 @@ export interface OllamaVersionResponse {
 }
 
 export interface OllamaChatChunk {
-  message?: { role?: string; content?: string };
+  message?: {
+    role?: string;
+    content?: string;
+    tool_calls?: Array<{
+      id?: string;
+      function?: { name?: string; arguments?: Record<string, unknown> | string };
+    }>;
+  };
   done?: boolean;
   eval_count?: number;
   prompt_eval_count?: number;
@@ -39,7 +54,8 @@ export interface ChatStreamUsage {
 
 export type ChatStreamEvent =
   | { type: "delta"; content: string }
-  | { type: "usage"; usage: ChatStreamUsage };
+  | { type: "usage"; usage: ChatStreamUsage }
+  | { type: "tool_calls"; toolCalls: OllamaToolCall[] };
 
 export interface OllamaPullChunk {
   status: string;
@@ -55,5 +71,6 @@ export interface OllamaTransport {
   chatStream(
     model: string,
     messages: OllamaChatMessage[],
+    tools?: unknown[],
   ): AsyncIterable<ChatStreamEvent>;
 }

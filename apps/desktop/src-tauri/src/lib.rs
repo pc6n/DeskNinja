@@ -5,6 +5,7 @@ mod shortcuts;
 mod store;
 mod tray;
 mod window;
+mod workspace;
 
 use commands::app_info::{get_app_info, show_about};
 use commands::macos::{
@@ -18,6 +19,10 @@ use commands::ollama::{
 use commands::todos::{
     add_todo, get_todos, remove_todo, reorder_todos, set_todo_due, toggle_todo, update_todo,
     TodoState,
+};
+use commands::workspace::{
+    list_workspace_dir, read_workspace_file, read_workspace_files, run_readonly_command,
+    WorkspaceState,
 };
 use parking_lot::Mutex;
 use shortcuts::{is_deskninja_shortcut, register_shortcuts};
@@ -60,6 +65,9 @@ pub fn run() {
         .manage(MacOsState {
             settings: settings_store.clone(),
         })
+        .manage(WorkspaceState {
+            settings: settings_store,
+        })
         .invoke_handler(tauri::generate_handler![
             check_ollama,
             ensure_ollama_running,
@@ -82,7 +90,11 @@ pub fn run() {
             get_app_settings,
             update_app_settings,
             get_app_info,
-            show_about
+            show_about,
+            read_workspace_file,
+            read_workspace_files,
+            list_workspace_dir,
+            run_readonly_command
         ])
         .setup(move |app| {
             if let Some(main) = app.get_webview_window("main") {

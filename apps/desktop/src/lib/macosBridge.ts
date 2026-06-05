@@ -17,6 +17,7 @@ export interface AccessibilityStatus {
 export interface AppSettings {
   accessibilityPrompted: boolean;
   rightClickMenuEnabled: boolean;
+  allowedPaths: string[];
 }
 
 export async function getSelectedText(): Promise<SelectedTextResult> {
@@ -45,12 +46,16 @@ export async function patchAppSettings(
   const patch: {
     accessibilityPrompted?: boolean | null;
     rightClickMenuEnabled?: boolean | null;
+    allowedPaths?: string[] | null;
   } = {};
   if (partial.accessibilityPrompted !== undefined) {
     patch.accessibilityPrompted = partial.accessibilityPrompted;
   }
   if (partial.rightClickMenuEnabled !== undefined) {
     patch.rightClickMenuEnabled = partial.rightClickMenuEnabled;
+  }
+  if (partial.allowedPaths !== undefined) {
+    patch.allowedPaths = partial.allowedPaths;
   }
   return invoke<AppSettings>("update_app_settings", { patch });
 }

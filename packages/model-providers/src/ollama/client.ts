@@ -6,6 +6,7 @@ import type {
   OllamaHealth,
   OllamaPullChunk,
   OllamaTagsResponse,
+  OllamaToolCall,
   OllamaTransport,
   OllamaVersionResponse,
   PullProgress,
@@ -75,11 +76,20 @@ export class OllamaClient implements OllamaTransport {
     }
   }
 
-  async *chatStream(model: string, messages: OllamaChatMessage[]): AsyncGenerator<ChatStreamEvent> {
+  async *chatStream(
+    model: string,
+    messages: OllamaChatMessage[],
+    tools?: unknown[],
+  ): AsyncGenerator<ChatStreamEvent> {
+    const body: Record<string, unknown> = { model, messages, stream: true };
+    if (tools?.length) {
+      body.tools = tools;
+    }
+
     const response = await this.fetchImpl(`${this.baseUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages, stream: true }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok || !response.body) {
@@ -91,6 +101,10 @@ export class OllamaClient implements OllamaTransport {
       const delta = chunk.message?.content;
       if (delta) {
         yield { type: "delta", content: delta };
+      }
+      const toolCalls = mapChunkToolCalls(chunk);
+      if (toolCalls.length > 0) {
+        yield { type: "tool_calls", toolCalls };
       }
       if (chunk.done) {
         const usage = toChatStreamUsage(chunk);
@@ -132,6 +146,23 @@ export function matchesModelName(installedName: string, requestedName: string): 
   }
 
   return installedTag === requestedTag || installedTag.startsWith(`${requestedTag}-`);
+}
+
+function mapChunkToolCalls(chunk: OllamaChatChunk): OllamaToolCall[] {
+  const raw = chunk.message?.tool_calls ?? [];
+  const mapped: OllamaToolCall[] = [];
+  raw.forEach((call, index) => {
+    const name = call.function?.name;
+    if (!name) {
+      return;
+    }
+    mapped.push({
+      id: call.id ?? `tool-${index}`,
+      name,
+      arguments: call.function?.arguments ?? {},
+    });
+  });
+  return mapped;
 }
 
 function toChatStreamUsage(chunk: OllamaChatChunk): ChatStreamUsage | undefined {
