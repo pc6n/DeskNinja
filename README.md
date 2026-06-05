@@ -2,7 +2,7 @@
 
 Desktop AI assistant for macOS — chat with local models (Ollama) from a clean Tauri + React app.
 
-## Features (v0.3.2)
+## Features (v0.3.3)
 
 - **Local Ollama integration** — download and run models on-device
 - **First-run setup** — Ollama service detection, model download with progress
@@ -20,6 +20,7 @@ Desktop AI assistant for macOS — chat with local models (Ollama) from a clean 
 - **Resizable panel** — resize the quick panel; size persists between opens
 - **Markdown chat** — structured replies with lists, headings, and code blocks
 - **Copy code** — copy button on code blocks in chat and context actions
+- **Context usage** — chat context token bar with model limit and last-reply count
 - **Clean monorepo** — provider-agnostic core, swappable adapters
 
 ## Requirements
@@ -56,7 +57,7 @@ Output: `apps/desktop/src-tauri/target/release/bundle/dmg/`
 Upload to GitHub Releases:
 
 ```bash
-gh release upload v0.3.2 apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg --clobber
+gh release upload v0.3.3 apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg --clobber
 ```
 
 ### macOS Gatekeeper (unsigned builds)
