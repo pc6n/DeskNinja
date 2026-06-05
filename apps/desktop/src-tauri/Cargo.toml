@@ -1,6 +1,6 @@
 [package]
 name = "deskninja-desktop"
-version = "0.3.3"
+version = "0.3.4"
 description = "DeskNinja desktop shell"
 authors = ["DeskNinja"]
 edition = "2021"
