@@ -41,6 +41,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const latestAssistant = getLatestAssistantMessage(
     messages,
     isStreaming ? streamingExcludeIds : new Set(),
@@ -58,6 +59,10 @@ export function ChatPanel({
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, isStreaming, streamPhase]);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   async function submitDraft(): Promise<void> {
     const content = draft.trim();
@@ -148,6 +153,7 @@ export function ChatPanel({
         </label>
         <textarea
           id="chat-input"
+          ref={inputRef}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleComposerKeyDown}

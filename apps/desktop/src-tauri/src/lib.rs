@@ -21,19 +21,19 @@ use commands::todos::{
     TodoState,
 };
 use commands::workspace::{
-    list_workspace_dir, read_workspace_file, read_workspace_files, run_readonly_command,
-    WorkspaceState,
+    explore_workspace_repo, list_workspace_dir, read_workspace_file, read_workspace_files,
+    run_readonly_command, WorkspaceState,
 };
 use parking_lot::Mutex;
-use shortcuts::{is_deskninja_shortcut, register_shortcuts};
+use shortcuts::{is_context_action_shortcut, is_deskninja_shortcut, register_shortcuts};
 use std::sync::Arc;
 use store::TodoStore;
 use settings_store::SettingsStore;
 use tauri::{Manager, RunEvent};
 use tauri_plugin_global_shortcut::ShortcutState;
 use window::{
-    configure_popup_window, hide_window, toggle_deskninja_at_cursor, toggle_panel_at_cursor,
-    ACTION_MENU_LABEL, PANEL_LABEL,
+    configure_popup_window, hide_window, toggle_context_action_at_cursor,
+    toggle_deskninja_at_cursor, toggle_panel_at_cursor, ACTION_MENU_LABEL, PANEL_LABEL,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -55,6 +55,8 @@ pub fn run() {
                     }
                     if is_deskninja_shortcut(shortcut) {
                         let _ = toggle_deskninja_at_cursor(app);
+                    } else if is_context_action_shortcut(shortcut) {
+                        let _ = toggle_context_action_at_cursor(app);
                     }
                 })
                 .build(),
@@ -94,6 +96,7 @@ pub fn run() {
             read_workspace_file,
             read_workspace_files,
             list_workspace_dir,
+            explore_workspace_repo,
             run_readonly_command
         ])
         .setup(move |app| {

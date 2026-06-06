@@ -6,6 +6,7 @@ export type ToolName =
   | "read_file"
   | "read_files"
   | "list_dir"
+  | "explore_repo"
   | "run_readonly_cmd";
 
 export interface ToolPermission {

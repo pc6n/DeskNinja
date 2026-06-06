@@ -1,6 +1,8 @@
+use crate::workspace::explore::explore_repo;
 use crate::workspace::readonly_cmd::run_readonly;
 use crate::workspace::sandbox::{
-    is_text_file, matches_glob, max_batch_files, max_file_bytes, resolve_allowed_path,
+    is_text_file, matches_glob, max_batch_files, max_dir_entries, max_file_bytes,
+    resolve_allowed_path,
 };
 use parking_lot::Mutex;
 use serde::Serialize;
@@ -16,8 +18,12 @@ pub struct WorkspaceState {
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceFileContent {
     pub path: String,
-    pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
     pub truncated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -30,8 +36,23 @@ pub struct WorkspaceDirEntry {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct WorkspaceDirListing {
+    pub entries: Vec<WorkspaceDirEntry>,
+    pub truncated: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ReadonlyCommandResult {
     pub output: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExploreRepoResult {
+    pub root: String,
+    pub files: Vec<String>,
+    pub truncated: bool,
 }
 
 #[tauri::command]
@@ -53,13 +74,22 @@ pub fn read_workspace_files(
         return Err(format!("Too many files (max {})", max_batch_files()));
     }
     let settings = state.settings.lock().get().clone();
-    paths
+    Ok(paths
         .iter()
-        .map(|path| {
-            let resolved = resolve_allowed_path(path, &settings)?;
-            read_file_at(&resolved)
-        })
-        .collect()
+        .map(|path| read_file_entry(path, &settings))
+        .collect())
+}
+
+fn read_file_entry(path: &str, settings: &crate::settings_store::AppSettings) -> WorkspaceFileContent {
+    match resolve_allowed_path(path, settings).and_then(|resolved| read_file_at(&resolved)) {
+        Ok(file) => file,
+        Err(error) => WorkspaceFileContent {
+            path: path.to_string(),
+            content: None,
+            truncated: false,
+            error: Some(error),
+        },
+    }
 }
 
 #[tauri::command]
@@ -67,7 +97,7 @@ pub fn list_workspace_dir(
     state: State<'_, WorkspaceState>,
     path: String,
     glob: Option<String>,
-) -> Result<Vec<WorkspaceDirEntry>, String> {
+) -> Result<WorkspaceDirListing, String> {
     let settings = state.settings.lock().get().clone();
     let resolved = resolve_allowed_path(&path, &settings)?;
     if !resolved.is_dir() {
@@ -75,6 +105,7 @@ pub fn list_workspace_dir(
     }
 
     let pattern = glob.unwrap_or_else(|| "*".to_string());
+    let limit = max_dir_entries();
     let mut entries = Vec::new();
     for entry in fs::read_dir(&resolved).map_err(|error| error.to_string())? {
         let entry = entry.map_err(|error| error.to_string())?;
@@ -89,8 +120,31 @@ pub fn list_workspace_dir(
             name,
         });
     }
-    entries.sort_by(|left, right| left.name.cmp(&right.name));
-    Ok(entries)
+    entries.sort_by(|left, right| {
+        right
+            .is_dir
+            .cmp(&left.is_dir)
+            .then_with(|| left.name.cmp(&right.name))
+    });
+    let truncated = entries.len() > limit;
+    if truncated {
+        entries.truncate(limit);
+    }
+    Ok(WorkspaceDirListing { entries, truncated })
+}
+
+#[tauri::command]
+pub fn explore_workspace_repo(
+    state: State<'_, WorkspaceState>,
+    path: String,
+) -> Result<ExploreRepoResult, String> {
+    let settings = state.settings.lock().get().clone();
+    let result = explore_repo(&path, &settings)?;
+    Ok(ExploreRepoResult {
+        root: result.root,
+        files: result.files,
+        truncated: result.truncated,
+    })
 }
 
 #[tauri::command]
@@ -102,6 +156,10 @@ pub fn run_readonly_command(
     let settings = state.settings.lock().get().clone();
     let output = run_readonly(&cmd, &args, &settings)?;
     Ok(ReadonlyCommandResult { output })
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 fn read_file_at(path: &std::path::Path) -> Result<WorkspaceFileContent, String> {
@@ -124,7 +182,8 @@ fn read_file_at(path: &std::path::Path) -> Result<WorkspaceFileContent, String> 
     }
     Ok(WorkspaceFileContent {
         path: path.to_string_lossy().to_string(),
-        content,
+        content: Some(content),
         truncated,
+        error: None,
     })
 }

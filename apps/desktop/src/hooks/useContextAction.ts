@@ -19,9 +19,11 @@ export function useContextAction(model: string) {
         const messages = buildContextMessages(actionId, selection, customPrompt);
         const transport = createDesktopOllamaTransport();
         let output = "";
-        for await (const chunk of transport.chatStream(model, messages)) {
-          output += chunk;
-          setResult(output);
+        for await (const event of transport.chatStream(model, messages)) {
+          if (event.type === "delta") {
+            output += event.content;
+            setResult(output);
+          }
         }
       } catch (nextError) {
         setError(nextError instanceof Error ? nextError.message : "Action failed.");

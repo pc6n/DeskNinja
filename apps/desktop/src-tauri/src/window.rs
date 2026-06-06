@@ -58,13 +58,21 @@ pub fn toggle_panel_at_cursor(app: &AppHandle) -> Result<(), String> {
     toggle_window_at_cursor(app, PANEL_LABEL)
 }
 
-/// ⌘J: hide if open; else context menu when text is selected, otherwise panel.
+/// ⌘J: toggle chat/todo panel (always — does not steal selection or clipboard).
 pub fn toggle_deskninja_at_cursor(app: &AppHandle) -> Result<(), String> {
     if window_visible(app, ACTION_MENU_LABEL)? {
         return hide_window(app, ACTION_MENU_LABEL);
     }
+    toggle_window_at_cursor(app, PANEL_LABEL)
+}
+
+/// ⌘⇧J: context actions when text is selected in another app.
+pub fn toggle_context_action_at_cursor(app: &AppHandle) -> Result<(), String> {
+    if window_visible(app, ACTION_MENU_LABEL)? {
+        return hide_window(app, ACTION_MENU_LABEL);
+    }
     if window_visible(app, PANEL_LABEL)? {
-        return hide_window(app, PANEL_LABEL);
+        let _ = hide_window(app, PANEL_LABEL);
     }
     let has_selection = capture_selection_for_menu(app)
         .ok()

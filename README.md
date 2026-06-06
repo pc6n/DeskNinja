@@ -10,7 +10,7 @@ Desktop AI assistant for macOS — chat with local models (Ollama) from a clean 
 - **Model catalog** — fast defaults (`llama3.2:1b`) through balanced/quality options
 - **Todo tab** — add, complete, edit, delete; optional due date & time
 - **Sortable todos** — drag to reorder, or sort by due date / created
-- **Global shortcut** — `⌘J` at the cursor: todos/chat panel, or context actions when text is selected (toggle to hide)
+- **Global shortcut** — `⌘J` toggles chat/todo panel; `⌘⇧J` opens context actions on selected text
 - **Context actions** — rephrase, improve, shorten, expand, custom prompt on selected text (Ollama)
 - **Draggable popup** — move panel via grip bar (frameless window)
 - **Scrollable panels** — setup/download and long content stay usable in the compact window

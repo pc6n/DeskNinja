@@ -162,9 +162,10 @@ pub async fn stream_ollama_chat(
     tools: Option<Vec<Value>>,
 ) -> Result<(), String> {
     let client = build_streaming_client()?;
+    let api_messages: Vec<Value> = messages.iter().map(message_to_ollama_api).collect();
     let mut body = serde_json::json!({
         "model": model,
-        "messages": messages,
+        "messages": api_messages,
         "stream": true
     });
     if let Some(tool_defs) = tools {
@@ -249,6 +250,44 @@ fn emit_chat_delta(app: &AppHandle, line: &str) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+fn message_to_ollama_api(message: &ChatMessageInput) -> Value {
+    let mut obj = serde_json::json!({
+        "role": message.role,
+        "content": message.content,
+    });
+
+    if let Some(tool_name) = &message.tool_name {
+        obj["tool_name"] = serde_json::Value::String(tool_name.clone());
+    }
+
+    if let Some(tool_calls) = &message.tool_calls {
+        obj["tool_calls"] = serde_json::Value::Array(normalize_tool_calls_for_api(tool_calls));
+    }
+
+    obj
+}
+
+fn normalize_tool_calls_for_api(tool_calls: &[Value]) -> Vec<Value> {
+    tool_calls
+        .iter()
+        .filter_map(|call| {
+            let function = call.get("function")?;
+            let name = function.get("name")?.as_str()?;
+            let arguments = function
+                .get("arguments")
+                .cloned()
+                .unwrap_or(Value::Object(serde_json::Map::new()));
+            Some(serde_json::json!({
+                "type": "function",
+                "function": {
+                    "name": name,
+                    "arguments": arguments
+                }
+            }))
+        })
+        .collect()
 }
 
 fn map_tool_calls(tool_calls: Vec<Value>) -> Vec<ChatToolCallPayload> {

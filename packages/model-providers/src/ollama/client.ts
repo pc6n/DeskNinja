@@ -1,3 +1,4 @@
+import { toOllamaApiMessages } from "./messages.js";
 import type {
   ChatStreamEvent,
   ChatStreamUsage,
@@ -81,7 +82,11 @@ export class OllamaClient implements OllamaTransport {
     messages: OllamaChatMessage[],
     tools?: unknown[],
   ): AsyncGenerator<ChatStreamEvent> {
-    const body: Record<string, unknown> = { model, messages, stream: true };
+    const body: Record<string, unknown> = {
+      model,
+      messages: toOllamaApiMessages(messages),
+      stream: true,
+    };
     if (tools?.length) {
       body.tools = tools;
     }

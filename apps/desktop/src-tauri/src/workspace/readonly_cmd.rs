@@ -1,5 +1,6 @@
 use super::sandbox::resolve_allowed_path;
 use crate::settings_store::AppSettings;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
 use std::time::Duration;
@@ -16,6 +17,7 @@ pub fn run_readonly(cmd: &str, args: &[String], settings: &AppSettings) -> Resul
     }
 
     let validated = validate_args(cmd, args, settings)?;
+    reject_file_content_commands(cmd, &validated)?;
     let output = run_with_timeout(cmd, &validated)?;
 
     if !output.status.success() {
@@ -47,6 +49,20 @@ fn resolve_arg_path(cmd: &str, arg: &str, settings: &AppSettings) -> Result<Stri
         return Ok(resolved.to_string_lossy().to_string());
     }
     Ok(resolved.to_string_lossy().to_string())
+}
+
+fn reject_file_content_commands(cmd: &str, args: &[String]) -> Result<(), String> {
+    if cmd != "ls" && cmd != "cat" && cmd != "head" && cmd != "tail" {
+        return Ok(());
+    }
+    let path_arg = args.iter().rev().find(|arg| looks_like_path(arg));
+    let Some(path_arg) = path_arg else {
+        return Ok(());
+    };
+    if Path::new(path_arg).extension().is_some() {
+        return Err("Use read_file to read file contents, not shell commands".into());
+    }
+    Ok(())
 }
 
 fn looks_like_path(arg: &str) -> bool {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AgentService, ConversationService } from "@deskninja/ai-core";
 import {
   DEFAULT_LOCAL_MODEL,
@@ -43,11 +43,17 @@ export function App() {
   const [agentService] = useState(() => new AgentService(registry, defaultProviderId));
   const [providerId, setProviderId] = useState(defaultProviderId);
   const [activeTab, setActiveTab] = useState<AppTab>("chat");
-  const [agentMode, setAgentMode] = useState(false);
+  const [agentMode, setAgentMode] = useState(true);
   const appSettings = useAppSettings();
   const selectedModel = localSetup.state.selectedModel;
   const toolsSupported =
     providerId === OLLAMA_PROVIDER_ID && modelSupportsTools(selectedModel);
+
+  useEffect(() => {
+    if (!toolsSupported) {
+      setAgentMode(false);
+    }
+  }, [toolsSupported]);
 
   const chat = useChatSession({
     conversationService,
@@ -195,6 +201,17 @@ export function App() {
           {!toolsSupported && providerId === OLLAMA_PROVIDER_ID ? (
             <p className="agent-hint">
               Agent mode needs a tool-capable model (3B+ or Qwen). Switch models to enable file tools.
+            </p>
+          ) : null}
+          {toolsSupported && !agentMode ? (
+            <p className="agent-hint">
+              Agent is off — turn on <strong>Agent</strong> in the header to read and list files.
+            </p>
+          ) : null}
+          {agentMode && toolsSupported ? (
+            <p className="agent-hint">
+              Tip: add your project folder under workspace folders so the agent can list and read
+              files accurately.
             </p>
           ) : null}
           <ChatPanel

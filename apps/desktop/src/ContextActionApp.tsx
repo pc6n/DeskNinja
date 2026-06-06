@@ -82,7 +82,7 @@ export function ContextActionApp() {
       <PanelDragBar />
       <header className="app-header app-header--panel">
         <h1>DeskNinja</h1>
-        <p className="context-hint">⌘J · with selection → context actions</p>
+        <p className="context-hint">⌘⇧J · with selection → context actions · ⌘J → chat</p>
       </header>
 
       <div className="panel-scroll">

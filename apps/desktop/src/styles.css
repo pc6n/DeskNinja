@@ -400,6 +400,8 @@ body.panel-mode {
 }
 
 .message-body {
+  user-select: text;
+  -webkit-user-select: text;
   margin: 0;
   line-height: 1.55;
   font-size: 0.92rem;
@@ -596,6 +598,8 @@ body.panel-mode {
 }
 
 .composer textarea {
+  user-select: text;
+  -webkit-user-select: text;
   width: 100%;
   resize: vertical;
   min-height: 4.5rem;

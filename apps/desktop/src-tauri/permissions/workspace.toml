@@ -5,5 +5,6 @@ commands.allow = [
   "read_workspace_file",
   "read_workspace_files",
   "list_workspace_dir",
+  "explore_workspace_repo",
   "run_readonly_command"
 ]

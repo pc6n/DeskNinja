@@ -12,7 +12,8 @@ export const AGENT_TOOL_DEFINITIONS: OllamaToolDefinition[] = [
     type: "function",
     function: {
       name: "read_file",
-      description: "Read a single text file from an allowed workspace folder.",
+      description:
+        "Read a single text file (source, config, markdown, css). Always use this for file contents — never ls or cat.",
       parameters: {
         type: "object",
         required: ["path"],
@@ -36,6 +37,21 @@ export const AGENT_TOOL_DEFINITIONS: OllamaToolDefinition[] = [
             items: { type: "string" },
             description: "File paths to read.",
           },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "explore_repo",
+      description:
+        "Scan a repository root for core source files. Skips node_modules, target, dist, .git, and similar dependency/build folders.",
+      parameters: {
+        type: "object",
+        required: ["path"],
+        properties: {
+          path: { type: "string", description: "Repository root path." },
         },
       },
     },
